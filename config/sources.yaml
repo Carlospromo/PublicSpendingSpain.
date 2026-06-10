@@ -109,14 +109,34 @@ consejo_ministros:
   perimetro: "AGE"
 
 dir3:
-  nombre: "DIR3 — Directorio Común de Unidades Orgánicas"
+  nombre: "DIR3 — Directorio Común de Unidades Orgánicas y Oficinas"
   descripcion: >
     Árbol orgánico ministerio → secretaría de Estado → dirección general con
     códigos únicos. Base del crosswalk servicio presupuestario ↔ DIR3.
-  url_base: "https://datos.gob.es"  # TODO: verificar dataset CSV concreto en datos.gob.es
-  formato: "CSV"
-  periodicidad: "continua"
-  perimetro: "AGE (unidades orgánicas estatales)"
+    Dataset nacional en datos.gob.es (E05251701, publica el Ministerio de
+    Hacienda). Los ficheros se sirven desde el Portal de Administración
+    Electrónica (PAe). VERIFICADO 2026-06: formato real XLSX (no CSV); el host
+    de descargas está tras un WAF BIG-IP que puede rechazar peticiones
+    automatizadas (en ese caso, aportar el fichero a mano en data/raw/dir3/).
+  url_base: "https://datos.gob.es/es/catalogo/e05251701-directorio-comun-de-unidades-organicas-y-oficinas-dir3"
+  formato: "XLSX"
+  periodicidad: "~mensual"
+  perimetro: "AGE (unidades orgánicas estatales); EELL excluido en v1"
+  # Distribuciones a descargar. La unidad AGE es el árbol orgánico (pieza clave);
+  # los catálogos de tipos sirven para decodificar códigos. EELL queda fuera de v1.
+  files:
+    - key: "unidades_age"
+      filename: "Listado Unidades AGE.xlsx"
+      url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Listado%20Unidades%20AGE.xlsx?idIniciativa=238&idElemento=2741"
+      descripcion: "Árbol orgánico de la AGE (pieza clave)."
+    - key: "tipos_unidad_organica"
+      filename: "Catalogo de Tipos de Unidad Organica.xlsx"
+      url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Catalogo%20de%20Tipos%20de%20Unidad%20Organica.xlsx?idIniciativa=238&idElemento=424"
+      descripcion: "Catálogo de tipos de unidad orgánica (decodifica el tipo)."
+    - key: "tipos_entidad_publica"
+      filename: "Catalogo de Tipos de Entidad Publica.xlsx"
+      url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Catalogo%20de%20Tipos%20de%20Entidad%20Publica.xlsx?idIniciativa=238&idElemento=423"
+      descripcion: "Catálogo de tipos de entidad pública (decodifica la entidad)."
 
 invente:
   nombre: "INVENTE — Inventario de Entes del Sector Público estatal"

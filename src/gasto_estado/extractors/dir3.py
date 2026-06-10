@@ -12,19 +12,22 @@ puede rechazar peticiones automatizadas; en ese caso ``download_to_raw`` lanza
 
 from __future__ import annotations
 
+import warnings
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from config import settings
-
-from .base import download_to_raw
+from .base import SourceBlockedError, download_to_raw
 
 FUENTE = "dir3"
 
 
 def _dir3_files() -> list[dict[str, Any]]:
     """Lista de distribuciones DIR3 declaradas en config/sources.yaml."""
+    # Import perezoso: config/ vive en la raíz del repo, fuera del paquete; la
+    # raíz de composición (cli.py) la hace importable antes de llegar aquí.
+    from config import settings
+
     sources = settings.load_sources()
     files: list[dict[str, Any]] = sources["dir3"].get("files", [])
     if not files:
@@ -39,20 +42,31 @@ def extract(
 ) -> list[Path]:
     """Descarga todas las distribuciones DIR3 a la capa raw.
 
-    Devuelve las rutas de los ficheros guardados. Propaga ``SourceBlockedError``
-    (fail loud) si el WAF impide la descarga, para que el usuario aporte el
-    fichero manualmente en lugar de continuar con datos corruptos.
+    Devuelve las rutas de los ficheros guardados. Si el WAF impide una descarga:
+    fichero ``requerido`` → ``SourceBlockedError`` (fail loud, aportar a mano);
+    fichero opcional (catálogos decodificadores) → aviso y se continúa.
     """
-    raw_dir = raw_dir or settings.RAW_DIR
+    if raw_dir is None:
+        from config import settings
+
+        raw_dir = settings.RAW_DIR
     saved: list[Path] = []
     for entry in _dir3_files():
-        saved.append(
-            download_to_raw(
-                entry["url"],
-                fuente=FUENTE,
-                filename=entry["filename"],
-                raw_dir=raw_dir,
-                capture_date=capture_date,
+        try:
+            saved.append(
+                download_to_raw(
+                    entry["url"],
+                    fuente=FUENTE,
+                    filename=entry["filename"],
+                    raw_dir=raw_dir,
+                    capture_date=capture_date,
+                )
             )
-        )
+        except SourceBlockedError:
+            if entry.get("requerido", True):
+                raise
+            warnings.warn(
+                f"dir3: omitido fichero opcional '{entry['filename']}' (fuente bloqueada).",
+                stacklevel=2,
+            )
     return saved

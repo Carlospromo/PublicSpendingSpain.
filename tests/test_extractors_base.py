@@ -18,9 +18,7 @@ def _fake_response(content: bytes, content_type: str) -> httpx.Response:
     )
 
 
-def test_download_writes_and_is_idempotent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_download_writes_and_is_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     responses = iter(
         [
             _fake_response(base.XLSX_MAGIC + b"primero", "application/vnd.ms-excel"),
@@ -52,9 +50,7 @@ def test_download_writes_and_is_idempotent(
     assert target.read_bytes() == base.XLSX_MAGIC + b"primero"
 
 
-def test_download_fails_loud_on_waf_html(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_download_fails_loud_on_waf_html(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         base,
         "_get",

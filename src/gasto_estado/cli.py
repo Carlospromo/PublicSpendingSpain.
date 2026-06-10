@@ -1,8 +1,11 @@
-"""CLI de gasto-estado (typer).
+"""CLI de gasto-estado (typer): raíz de composición del proyecto.
 
-Fase 0: solo stubs. Cada comando imprime la fase en la que se implementará.
 Comandos canónicos (CLAUDE.md §6): extract, build, update, check, api.
+Los aún no implementados imprimen la fase en la que se implementarán.
 """
+
+import sys
+from pathlib import Path
 
 import typer
 
@@ -11,6 +14,25 @@ app = typer.Typer(
     help="Monitorización y auditoría del gasto del Estado español.",
     no_args_is_help=True,
 )
+
+
+def _bootstrap_repo_root() -> None:
+    """Hace importable ``config/`` (vive en la raíz del repo, fuera del paquete).
+
+    El proyecto se opera desde el checkout del repo (git-scraping: ``config/`` y
+    ``data/`` viven ahí), pero el *console script* instalado no añade el CWD a
+    ``sys.path``. Fail loud si no estamos en la raíz del repo.
+    """
+    repo_root = Path.cwd()
+    if not (repo_root / "config" / "settings.py").exists():
+        typer.echo(
+            "error: ejecuta el comando desde la raíz del repositorio "
+            "(no se encuentra config/settings.py).",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
 
 
 @app.command()
@@ -28,9 +50,15 @@ def extract(
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
     if source == "dir3":
+        _bootstrap_repo_root()
         from gasto_estado.extractors import dir3
+        from gasto_estado.extractors.base import SourceBlockedError
 
-        saved = dir3.extract()
+        try:
+            saved = dir3.extract()
+        except SourceBlockedError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
         for path in saved:
             typer.echo(f"dir3: guardado {path}")
         return

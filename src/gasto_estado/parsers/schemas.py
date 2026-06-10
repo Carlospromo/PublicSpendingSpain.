@@ -15,6 +15,23 @@ DIR3_ESTADOS = ("V", "E", "A", "T")
 # Códigos DIR3: letra(s) + dígitos, p. ej. "E04921901", "EA0008567".
 _DIR3_COD_REGEX = r"^[A-Z]{1,2}\d{7,8}$"
 
+dim_seccion_servicio_schema = pa.DataFrameSchema(
+    {
+        "ejercicio": pa.Column("int64", pa.Check.ge(2000)),
+        # Etiqueta oficial del presupuesto de origen ("2025-P" = prórroga del
+        # PGE 2025; en prórroga no coincide con el ejercicio que rige).
+        "presupuesto": pa.Column(str),
+        "seccion_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$")),
+        "seccion_denominacion": pa.Column(str),
+        "servicio_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$")),
+        "servicio_denominacion": pa.Column(str),
+    },
+    strict=True,
+    coerce=False,
+    # Un servicio es único dentro de su sección y ejercicio.
+    unique=["ejercicio", "seccion_cod", "servicio_cod"],
+)
+
 dir3_unidades_schema = pa.DataFrameSchema(
     {
         "dir3_cod": pa.Column(str, pa.Check.str_matches(_DIR3_COD_REGEX), unique=True),

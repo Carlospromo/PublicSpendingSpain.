@@ -1,0 +1,5 @@
+# Overrides manuales del crosswalk servicio↔DIR3. Editable a mano; versionado.
+# Prevalecen sobre el matching automático (match_tipo=manual). Documentar cada
+# fila en la columna nota y los casos conflictivos en README.md.
+ejercicio,seccion_cod,servicio_cod,dir3_cod,nota
+2026,13,07,EA0008567,Servicio 13.07 'Presidente del Gobierno': Presidencia del Gobierno tiene raíz DIR3 propia fuera del Mº de la Presidencia

@@ -57,11 +57,30 @@ pge:
   descripcion: >
     Créditos iniciales al máximo detalle, publicados por la SEPG y en
     datos.gob.es. En años de prórroga distinguir crédito inicial legal vs
-    operativo.
-  url_base: null  # TODO: verificar dataset concreto en SEPG / datos.gob.es
-  formato: "CSV"
+    operativo. VERIFICADO 2026-06: el árbol PGE-ROM de la SEPG publica los
+    estados de gastos por programa en CSV/XML (latin-1, separador ';');
+    el dataset agregado de datos.gob.es solo enlaza páginas de aterrizaje.
+  url_base: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/Indice.htm"
+  formato: "CSV (latin-1, ';') / XML / HTM"
   periodicidad: "anual (o prórroga)"
   perimetro: "AGE + organismos estatales"
+
+pge_organica:
+  nombre: "PGE — Clasificación orgánica (secciones y servicios presupuestarios)"
+  descripcion: >
+    Relación oficial de secciones y servicios presupuestarios del PGE vigente,
+    del documento "Resumen general por servicios y capítulos del presupuesto
+    de gastos" (Serie verde del PGE-ROM, SEPG). VERIFICADO 2026-06: en 2026
+    rige la prórroga del PGE 2025 (etiqueta oficial "2025-P"); el árbol
+    PGE2025Prorroga refleja la estructura ministerial vigente (37 secciones,
+    22 ministerios). CSV en latin-1 con separador ';'. La URL cambia con cada
+    ejercicio/prórroga: actualizarla al publicarse un nuevo PGE.
+  url_base: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/Indice.htm"
+  url_resumen_servicios: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/doc/CSV/N_25P_E_V_1_101_1_1_2_A_1.CSV"
+  formato: "CSV (latin-1, ';')"
+  periodicidad: "anual (o prórroga)"
+  perimetro: "Estado (secciones 01-38); OOAA y resto de entidades aparte"
+  ejercicio_vigente: 2026
 
 placsp:
   nombre: "PLACSP — Plataforma de Contratación del Sector Público (datos abiertos)"

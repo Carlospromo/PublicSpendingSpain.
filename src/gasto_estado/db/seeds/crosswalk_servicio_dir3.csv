@@ -1,0 +1,238 @@
+ejercicio,seccion_cod,servicio_cod,servicio_denominacion,dir3_cod,dir3_denominacion,match_tipo,match_detalle
+2026,01,01,CASA DE SU MAJESTAD EL REY,,,sin_match,seccion_sin_ministerio_dir3
+2026,02,01,CORTES GENERALES,,,sin_match,seccion_sin_ministerio_dir3
+2026,02,02,CONGRESO DE LOS DIPUTADOS,,,sin_match,seccion_sin_ministerio_dir3
+2026,02,03,SENADO,,,sin_match,seccion_sin_ministerio_dir3
+2026,02,04,JUNTA ELECTORAL CENTRAL,,,sin_match,seccion_sin_ministerio_dir3
+2026,02,05,DEFENSOR DEL PUEBLO,,,sin_match,seccion_sin_ministerio_dir3
+2026,03,01,"TRIBUNAL, FISCALÍA Y SERVICIOS GENERALES",,,sin_match,seccion_sin_ministerio_dir3
+2026,04,01,TRIBUNAL CONSTITUCIONAL,,,sin_match,seccion_sin_ministerio_dir3
+2026,05,01,CONSEJO DE ESTADO,,,sin_match,seccion_sin_ministerio_dir3
+2026,06,01,"BONOS, OBLIGACIONES Y OTRAS DEUDAS",,,sin_match,seccion_sin_ministerio_dir3
+2026,06,02,PRÉSTAMOS,,,sin_match,seccion_sin_ministerio_dir3
+2026,06,03,LETRAS DEL TESORO,,,sin_match,seccion_sin_ministerio_dir3
+2026,06,04,DEUDAS ASUMIDAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,06,05,OBLIGACIONES DIVERSAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,07,01,PENSIONES Y OTRAS PRESTACIONES DE CLASES PASIVAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,08,01,CONSEJO GENERAL DEL PODER JUDICIAL,,,sin_match,seccion_sin_ministerio_dir3
+2026,09,01,DIRECCIÓN GENERAL DE PRESUPUESTOS,,,sin_match,seccion_sin_ministerio_dir3
+2026,10,01,DIRECCIÓN GENERAL DE RACIONALIZACIÓN Y CENTRALIZACIÓN DE LA CONTRATACIÓN,,,sin_match,seccion_sin_ministerio_dir3
+2026,12,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05023901,"Ministerio de Asuntos Exteriores, Unión Europea y Cooperación",por_denominacion,regla_servicios_generales
+2026,12,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05033801,"Subsecretaría de Asuntos Exteriores, Unión Europea y Cooperación",por_denominacion,regla_servicios_generales
+2026,12,02,SECRETARÍA DE ESTADO PARA LA UNIÓN EUROPEA,E05028501,Secretaría de Estado para la Unión Europea,exacto,denominacion_normalizada
+2026,12,03,SECRETARÍA DE ESTADO DE COOPERACIÓN INTERNACIONAL,E05076401,Secretaría de Estado de Cooperación Internacional,exacto,denominacion_normalizada
+2026,12,04,SECRETARÍA DE ESTADO DE ASUNTOS EXTERIORES Y GLOBALES,E05191001,Secretaría de Estado de Asuntos Exteriores y Globales,exacto,denominacion_normalizada
+2026,12,05,SECRETARÍA DE ESTADO PARA IBEROAMERICA Y EL CARIBE Y EL ESPAÑOL EN EL MUNDO,E05190701,Secretaría de Estado para Iberoamérica y el Caribe y el Español en el Mundo,exacto,denominacion_normalizada
+2026,13,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05228601,"Ministerio de la Presidencia, Justicia y Relaciones con las Cortes",por_denominacion,regla_servicios_generales
+2026,13,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05238401,"Subsecretaría de la Presidencia, Justicia y Relaciones con las Cortes",por_denominacion,regla_servicios_generales
+2026,13,02,SECRETARÍA DE ESTADO DE JUSTICIA,E05228901,Secretaría de Estado de Justicia,exacto,denominacion_normalizada
+2026,13,03,DIRECCIÓN GENERAL DE SEGURIDAD JURÍDICA Y FE PÚBLICA,E00131304,Dirección General de Seguridad Jurídica y Fe Pública,exacto,denominacion_normalizada
+2026,13,04,ABOGACÍA GENERAL DEL ESTADO,E00130903,Abogacía General del Estado,exacto,denominacion_normalizada
+2026,13,05,SECRETARÍA GENERAL PARA LA INNOVACIÓN Y CALIDAD DEL SERVICIO PÚBLICO DE JUSTICIA. FISCALÍA GENERAL,,,sin_match,sin_candidato_en_subarbol
+2026,13,06,SECRETARÍA GENERAL PARA LA INNOVACIÓN Y CALIDAD DEL SERVICIO PÚBLICO DE JUSTICIA. MINISTERIO FISCAL,,,sin_match,sin_candidato_en_subarbol
+2026,13,07,PRESIDENTE DEL GOBIERNO,EA0008567,Presidencia del Gobierno,manual,Servicio 13.07 'Presidente del Gobierno': Presidencia del Gobierno tiene raíz DIR3 propia fuera del Mº de la Presidencia
+2026,13,08,SECRETARIADO DEL GOBIERNO Y RELACIONES CON LAS CORTES,,,sin_match,sin_candidato_en_subarbol
+2026,14,01,MINISTERIO Y SUBSECRETARÍA,E00003301,Ministerio de Defensa,por_denominacion,regla_servicios_generales
+2026,14,01,MINISTERIO Y SUBSECRETARÍA,E00116501,Subsecretaria de Defensa,por_denominacion,regla_servicios_generales
+2026,14,02,CUARTEL GENERAL DEL EMAD,,,sin_match,sin_candidato_en_subarbol
+2026,14,03,SECRETARÍA DE ESTADO DE DEFENSA,E00116001,S. de E. de Defensa,exacto,denominacion_normalizada
+2026,14,12,EJÉRCITO DE TIERRA,E00117001,Ejército de Tierra,exacto,denominacion_normalizada
+2026,14,17,ARMADA,E00117101,Armada,exacto,denominacion_normalizada
+2026,14,22,EJÉRCITO DEL AIRE Y DEL ESPACIO,E00117201,Ejército del Aire y del Espacio,exacto,denominacion_normalizada
+2026,14,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,15,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05250001,Ministerio de Hacienda,por_denominacion,regla_servicios_generales
+2026,15,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05253001,Subsecretaria de Hacienda,por_denominacion,regla_servicios_generales
+2026,15,02,SECRETARÍA GENERAL TÉCNICA,E04935203,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,15,04,DIRECCIÓN GENERAL DEL PATRIMONIO DEL ESTADO,E00126605,Dirección General del Patrimonio del Estado,exacto,denominacion_normalizada
+2026,15,05,SECRETARÍA DE ESTADO DE HACIENDA,E05250301,Secretaria de Estado de Hacienda,exacto,denominacion_normalizada
+2026,15,06,DIRECCIÓN GENERAL DE RACIONALIZACIÓN Y CENTRALIZACIÓN DE LA CONTRATACIÓN,E04962703,Dirección General de Racionalización y Centralización de la Contratación,exacto,denominacion_normalizada
+2026,15,07,DIRECCIÓN GENERAL DE TRIBUTOS,E00127005,Dirección General de Tributos,exacto,denominacion_normalizada
+2026,15,08,DIRECCIÓN GENERAL DEL CATASTRO,E00127105,Dirección General del Catastro,exacto,denominacion_normalizada
+2026,15,09,TRIBUNAL ECONÓMICO-ADMINISTRATIVO CENTRAL,E00127205,Tribunal Económico Administrativo Central,exacto,denominacion_normalizada
+2026,15,11,INTERVENCIÓN GENERAL DE LA ADMINISTRACIÓN DEL ESTADO,E00127405,Intervención General de la Administración del Estado,exacto,denominacion_normalizada
+2026,15,12,SECRETARÍA DE ESTADO DE PRESUPUESTOS Y GASTOS,E05250601,Secretaria de Estado de Presupuestos y Gastos,exacto,denominacion_normalizada
+2026,15,13,DIRECCIÓN GENERAL DE COSTES DE PERSONAL,E00127606,Dirección General de Costes de Personal,exacto,denominacion_normalizada
+2026,15,14,SECRETARÍA GENERAL DE FONDOS EUROPEOS,EA0045367,Secretaría General de Fondos Europeos,exacto,denominacion_normalizada
+2026,15,15,DIRECCIÓN GENERAL DE PRESUPUESTOS,E00127505,Dirección General de Presupuestos,exacto,denominacion_normalizada
+2026,15,22,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL,E04995702,Secretaría General de Financiación Autonómica y Local,exacto,denominacion_normalizada
+2026,15,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,16,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E00003801,Ministerio del Interior,por_denominacion,regla_servicios_generales
+2026,16,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E00128701,Subsecretaria del Interior,por_denominacion,regla_servicios_generales
+2026,16,02,SECRETARÍA DE ESTADO DE SEGURIDAD,E00129101,S. de E. de Seguridad,exacto,denominacion_normalizada
+2026,16,03,DIRECCIÓN GENERAL DE LA POLICÍA,E04931201,Dirección General de la Policía,exacto,denominacion_normalizada
+2026,16,04,DIRECCIÓN GENERAL DE LA GUARDIA CIVIL,E04931401,D.G. de la Guardia Civil,exacto,denominacion_normalizada
+2026,16,05,SECRETARÍA GENERAL DE INSTITUCIONES PENITENCIARIAS,E04796602,Secretaría General de Instituciones Penitenciarias,exacto,denominacion_normalizada
+2026,17,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05229701,Ministerio de Transportes y Movilidad Sostenible,por_denominacion,regla_servicios_generales
+2026,17,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05238601,Subsecretaría de Transportes y Movilidad Sostenible,por_denominacion,regla_servicios_generales
+2026,17,02,DIRECCIÓN GENERAL DE PROGRAMACIÓN ECONÓMICA Y PRESUPUESTOS,E00124704,Dirección General de Programación Económica y Presupuestos,exacto,denominacion_normalizada
+2026,17,03,SECRETARÍA GENERAL TÉCNICA,E00124103,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,17,18,DIRECCIÓN GENERAL DEL INSTITUTO GEOGRÁFICO NACIONAL,E00125105,Dirección General del Instituto Geográfico Nacional,exacto,denominacion_normalizada
+2026,17,20,SECRETARÍA DE ESTADO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE,E05230001,Secretaría de Estado de Transportes y Movilidad Sostenible,exacto,denominacion_normalizada
+2026,17,32,DIRECCIÓN GENERAL DE MARINA MERCANTE,E00124506,Dirección General de la Marina Mercante,por_denominacion,tokens_significativos
+2026,17,34,DIRECCIÓN GENERAL DE AVIACIÓN CIVIL,E00124306,Dirección General de Aviación Civil,exacto,denominacion_normalizada
+2026,17,38,DIRECCIÓN GENERAL DE CARRETERAS,E00124906,Dirección General de Carreteras,exacto,denominacion_normalizada
+2026,17,39,DIRECCIÓN GENERAL DE TRANSPORTE POR CARRETERA Y FERROCARRIL,E00124406,Dirección General de Transporte por Carretera y Ferrocarril,exacto,denominacion_normalizada
+2026,17,40,DIRECCIÓN GENERAL DEL SECTOR FERROVIARIO,E05078201,Dirección General del Sector Ferroviario,exacto,denominacion_normalizada
+2026,17,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,18,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05230301,"Ministerio de Educación, Formación Profesional y Deportes",por_denominacion,regla_servicios_generales
+2026,18,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05238801,"Subsecretaría de Educación, Formación Profesional y Deportes",por_denominacion,regla_servicios_generales
+2026,18,02,SECRETARÍA GENERAL TÉCNICA,E04936202,Secretaría General Técnica (MEFPD),por_denominacion,prefijo_unico
+2026,18,03,SECRETARÍA DE ESTADO DE EDUCACIÓN,E05230601,Secretaría de Estado de Educación,exacto,denominacion_normalizada
+2026,18,04,DIRECCIÓN GENERAL DE EVALUACIÓN Y COOPERACIÓN TERRITORIAL,E04874804,Dirección General de Evaluación y Cooperación Territorial,exacto,denominacion_normalizada
+2026,18,05,SECRETARÍA GENERAL DE FORMACIÓN PROFESIONAL,E05078801,Secretaría General de Formación Profesional,exacto,denominacion_normalizada
+2026,18,08,DIRECCIÓN GENERAL DE PLANIFICACIÓN Y GESTIÓN EDUCATIVA,E04996503,Dirección General de Planificación y Gestión Educativa,exacto,denominacion_normalizada
+2026,18,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,19,01,MINISTERIO Y SUBSECRETARÍA,E05066501,Ministerio de Trabajo y Economía Social,por_denominacion,regla_servicios_generales
+2026,19,01,MINISTERIO Y SUBSECRETARÍA,E05073901,Subsecretaría de Trabajo y Economía Social,por_denominacion,regla_servicios_generales
+2026,19,02,SECRETARÍA DE ESTADO DE ECONOMÍA SOCIAL,E05231201,Secretaría de Estado de Economía Social,exacto,denominacion_normalizada
+2026,19,03,SECRETARÍA DE ESTADO DE TRABAJO,E05230901,Secretaría de Estado de Trabajo,exacto,denominacion_normalizada
+2026,20,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05231501,Ministerio de Industria y Turismo,por_denominacion,regla_servicios_generales
+2026,20,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05239001,Subsecretaría de Industria y Turismo,por_denominacion,regla_servicios_generales
+2026,20,02,SECRETARÍA GENERAL TÉCNICA,E04934203,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,20,03,SECRETARÍA DE ESTADO DE INDUSTRIA,E05231801,Secretaría de Estado de Industria,exacto,denominacion_normalizada
+2026,20,04,SECRETARÍA DE ESTADO DE TURISMO,E05232101,Secretaría de Estado de Turismo,exacto,denominacion_normalizada
+2026,20,09,DIRECCIÓN GENERAL DE PROGRAMAS INDUSTRIALES,E05248501,Dirección General de Programas Industriales,exacto,denominacion_normalizada
+2026,20,10,DIRECCIÓN GENERAL DE ESTRATEGIA INDUSTRIAL Y DE LA PEQUEÑA Y MEDIANA EMPRESA,E04934603,Dirección General de Estrategia Industrial y de la Pequeña y Mediana Empresa,exacto,denominacion_normalizada
+2026,20,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,21,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05024401,"Ministerio de Agricultura, Pesca y Alimentación",por_denominacion,regla_servicios_generales
+2026,21,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05034901,"Subsecretaría de Agricultura, Pesca y Alimentación",por_denominacion,regla_servicios_generales
+2026,21,02,SECRETARÍA GENERAL TÉCNICA,EA0022315,Secretaria General Técnica,exacto,denominacion_normalizada
+2026,21,03,DIRECCIÓN GENERAL DE SERVICIOS E INSPECCIÓN,EA0043067,Dirección General de Servicios e Inspección,exacto,denominacion_normalizada
+2026,21,04,SECRETARÍA GENERAL DE RECURSOS AGRARIOS Y SEGURIDAD ALIMENTARIA,E04932003,Secretaría General de Recursos Agrarios y Seguridad Alimentaria,exacto,denominacion_normalizada
+2026,21,05,DIRECCIÓN GENERAL DE PRODUCCIONES Y MERCADOS AGRARIOS,E04932203,Dirección General de Producciones y Mercados Agrarios,exacto,denominacion_normalizada
+2026,21,06,DIRECCIÓN GENERAL DE SANIDAD DE LA PRODUCCIÓN AGROALIMENTARIA Y BIENESTAR ANIMAL,E04932403,Dirección General de Sanidad de la Producción Agroalimentaria y Bienestar Animal,exacto,denominacion_normalizada
+2026,21,07,DIRECCIÓN GENERAL DE ALIMENTACIÓN,E04932603,Dirección General de Alimentación,exacto,denominacion_normalizada
+2026,21,08,"DIRECCIÓN GENERAL DE DESARROLLO RURAL, INNOVACIÓN Y FORMACIÓN AGROALIMENTARIA",E05079001,"Dirección General de Desarrollo Rural, Innovación y Formación Agroalimentaria",exacto,denominacion_normalizada
+2026,21,09,SECRETARÍA GENERAL DE PESCA,E04933003,Secretaría General de Pesca,exacto,denominacion_normalizada
+2026,21,10,DIRECCIÓN GENERAL DE PESCA SOSTENIBLE,EA0043025,Dirección General de Pesca Sostenible,exacto,denominacion_normalizada
+2026,21,11,DIRECCIÓN GENERAL DE ORDENACIÓN PESQUERA Y ACUICULTURA,E05009402,Dirección General de Ordenación Pesquera y Acuicultura,exacto,denominacion_normalizada
+2026,22,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05232701,Ministerio de Política Territorial y Memoria Democrática,por_denominacion,regla_servicios_generales
+2026,22,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05239201,Subsecretaría de Política Territorial y Memoria Democrática,por_denominacion,regla_servicios_generales
+2026,22,02,SECRETARÍA DE ESTADO DE POLÍTICA TERRITORIAL,E05233001,Secretaría de Estado de Política Territorial,exacto,denominacion_normalizada
+2026,22,03,SECRETARÍA DE ESTADO DE MEMORIA DEMOCRÁTICA,E05233301,Secretaría de Estado de Memoria Democrática,exacto,denominacion_normalizada
+2026,23,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05068001,Ministerio para la Transición Ecológica y el Reto Demográfico,por_denominacion,regla_servicios_generales
+2026,23,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05074301,Subsecretaría para la Transición Ecológica y el Reto Demográfico,por_denominacion,regla_servicios_generales
+2026,23,02,SECRETARÍA GENERAL TÉCNICA,E05041502,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,23,03,SECRETARÍA DE ESTADO DE ENERGÍA,E05068301,Secretaría de Estado de Energía,exacto,denominacion_normalizada
+2026,23,04,SECRETARÍA DE ESTADO DE MEDIO AMBIENTE,E05068601,Secretaría de Estado de Medio Ambiente,exacto,denominacion_normalizada
+2026,23,05,DIRECCIÓN GENERAL DEL AGUA,E04595806,Dirección General del Agua,exacto,denominacion_normalizada
+2026,23,06,DIRECCIÓN GENERAL DE LA COSTA Y DEL MAR,E04795206,Dirección General de la Costa y el Mar,por_denominacion,tokens_significativos
+2026,23,08,DIRECCIÓN GENERAL DE CALIDAD Y EVALUACIÓN AMBIENTAL,E05077101,Dirección General de Calidad y Evaluación Ambiental,exacto,denominacion_normalizada
+2026,23,09,DIRECCIÓN GENERAL DE POLÍTICA ENERGÉTICA Y MINAS,E00119407,Dirección General de Política Energética y Minas,exacto,denominacion_normalizada
+2026,23,10,OFICINA ESPAÑOLA DEL CAMBIO CLIMÁTICO,E04737007,Oficina Española del Cambio Climático,exacto,denominacion_normalizada
+2026,23,11,"DIRECCIÓN GENERAL DE BIODIVERSIDAD, BOSQUES Y DESERTIFICACIÓN",E05077401,"Dirección General de Biodiversidad, Bosques y Desertificación",exacto,denominacion_normalizada
+2026,23,12,DIRECCIÓN GENERAL DE SERVICIOS,E05078001,Dirección General de Servicios,exacto,denominacion_normalizada
+2026,23,13,SECRETARÍA GENERAL PARA EL RETO DEMOGRÁFICO,E05077601,Secretaría General para el Reto Demográfico,exacto,denominacion_normalizada
+2026,23,14,DIRECCIÓN GENERAL DE POLÍTICAS CONTRA LA DESPOBLACIÓN,E05077801,Dirección General de Políticas contra la Despoblación,exacto,denominacion_normalizada
+2026,23,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,24,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05234201,Ministerio de Cultura,por_denominacion,regla_servicios_generales
+2026,24,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05239601,Subsecretaría de Cultura,por_denominacion,regla_servicios_generales
+2026,24,02,SECRETARÍA GENERAL TÉCNICA,E05041701,Secretaría General Técnica (CLT),por_denominacion,prefijo_unico
+2026,24,03,"DIRECCIÓN GENERAL DEL LIBRO, DEL CÓMIC Y DE LA LECTURA",E05041902,"Dirección General del Libro, del Cómic y de la Lectura",exacto,denominacion_normalizada
+2026,24,04,DIRECCIÓN GENERAL DE DERECHOS CULTURALES,E05042102,Dirección General de Derechos Culturales,exacto,denominacion_normalizada
+2026,24,05,DIRECCIÓN GENERAL DE PATRIMONIO CULTURAL Y BELLAS ARTES,E05042302,Dirección General de Patrimonio Cultural y Bellas Artes,exacto,denominacion_normalizada
+2026,24,06,SECRETARÍA DE ESTADO DE CULTURA,E05234501,Secretaría de Estado de Cultura,exacto,denominacion_normalizada
+2026,24,07,DIRECCIÓN GENERAL DE ARTES ESCÉNICAS Y MÚSICA,EA0058527,Dirección General de Artes Escénicas y Música,exacto,denominacion_normalizada
+2026,25,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05233601,Ministerio de Vivienda y Agenda Urbana,por_denominacion,regla_servicios_generales
+2026,25,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05239401,Subsecretaría de Vivienda y Agenda Urbana,por_denominacion,regla_servicios_generales
+2026,25,09,DIRECCIÓN GENERAL DE VIVIENDA Y SUELO,E05078601,Dirección General de Vivienda y Suelo,exacto,denominacion_normalizada
+2026,25,10,DIRECCIÓN GENERAL DE AGENDA URBANA Y ARQUITECTURA,E05078401,Dirección General de Agenda Urbana y Arquitectura,exacto,denominacion_normalizada
+2026,25,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,26,01,MINISTERIO Y SUBSECRETARÍA,E05070101,Ministerio de Sanidad,por_denominacion,regla_servicios_generales
+2026,26,01,MINISTERIO Y SUBSECRETARÍA,E05074701,Subsecretaría de Sanidad,por_denominacion,regla_servicios_generales
+2026,26,02,SECRETARÍA GENERAL TÉCNICA,E05079201,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,26,03,"SECRETARÍA GENERAL DE SALUD DIGITAL, INFORMACIÓN E INNOVACIÓN DEL SISTEMA NACIONAL DE SALUD",E05174501,"Secretaría General de Salud Digital, Información e Innovación del Sistema Nacional de salud",exacto,denominacion_normalizada
+2026,26,04,SECRETARÍA DE ESTADO DE SANIDAD,E05173901,Secretaría de Estado de Sanidad,exacto,denominacion_normalizada
+2026,26,05,DIRECCIÓN GENERAL DE SALUD DIGITAL Y SISTEMAS DE INFORMACIÓN PARA EL SISTEMA NACIONAL DE SALUD,E05174601,Dirección General de Salud Digital y Sistemas de información para el Sistema Nacional de Salud,exacto,denominacion_normalizada
+2026,26,06,COMISIONADO DE SALUD MENTAL,EA0055748,Comisionado de Salud Mental,exacto,denominacion_normalizada
+2026,26,07,DIRECCIÓN GENERAL DE SALUD PÚBLICA Y EQUIDAD EN SALUD,E05174301,Dirección General de Salud Pública y Equidad en Salud,exacto,denominacion_normalizada
+2026,26,09,DIRECCIÓN GENERAL DE CARTERA COMÚN DE SERVICIOS DEL SISTEMA NACIONAL DE SALUD Y FARMACIA,E04939305,Dirección General de Cartera Común de Servicios del Sistema Nacional de Salud y Farmacia,exacto,denominacion_normalizada
+2026,26,12,DIRECCIÓN GENERAL DE ORDENACIÓN PROFESIONAL,E04939505,Dirección General de Ordenación Profesional,exacto,denominacion_normalizada
+2026,26,18,DELEGACIÓN DEL GOBIERNO PARA EL PLAN NACIONAL SOBRE DROGAS,E04601908,Delegación del Gobierno para el Plan Nacional sobre Drogas,exacto,denominacion_normalizada
+2026,27,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05074501,"Subsecretaría de Economía, Comercio y Empresa",por_denominacion,regla_servicios_generales
+2026,27,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05234801,"Ministerio de Economía, Comercio y Empresa",por_denominacion,regla_servicios_generales
+2026,27,02,SECRETARÍA GENERAL TÉCNICA,E04931804,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,27,03,SECRETARÍA DE ESTADO DE ECONOMÍA Y APOYO A LA EMPRESA,E05235101,Secretaría de Estado de Economía y Apoyo a la Empresa,exacto,denominacion_normalizada
+2026,27,04,SECRETARÍA GENERAL DEL TESORO Y FINANCIACIÓN INTERNACIONAL,E05042502,Secretaría General del Tesoro y Financiación Internacional,exacto,denominacion_normalizada
+2026,27,05,DIRECCIÓN GENERAL DE POLÍTICA ECONÓMICA,E00118708,Dirección General de Política Económica,exacto,denominacion_normalizada
+2026,27,06,DIRECCIÓN GENERAL DE ANÁLISIS ECONÓMICO,E05042902,Dirección General de Análisis Económico,exacto,denominacion_normalizada
+2026,27,07,DIRECCIÓN GENERAL DE SEGUROS Y FONDOS DE PENSIONES,E00119006,Dirección General de Seguros y Fondos de Pensiones,exacto,denominacion_normalizada
+2026,27,10,SECRETARÍA DE ESTADO DE COMERCIO,E05235401,Secretaría de Estado de Comercio,exacto,denominacion_normalizada
+2026,27,14,DIRECCIÓN GENERAL DE INTELIGENCIA ECONÓMICA Y COMERCIAL,E00119809,Dirección General de Inteligencia Económica y Comercial,exacto,denominacion_normalizada
+2026,27,15,DIRECCIÓN GENERAL DE POLÍTICA COMERCIAL Y SEGURIDAD ECONÓMICA,E00120009,Dirección General de Política Comercial y Seguridad Económica,exacto,denominacion_normalizada
+2026,27,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,28,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05236301,"Ministerio de Ciencia, Innovación y Universidades",por_denominacion,regla_servicios_generales
+2026,28,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05240201,"Subsecretaría de Ciencia, Innovación y Universidades",por_denominacion,regla_servicios_generales
+2026,28,02,SECRETARÍA GENERAL TÉCNICA,E05043502,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,28,06,SECRETARÍA GENERAL DE INVESTIGACIÓN,E05082801,Secretaría General de Investigación,exacto,denominacion_normalizada
+2026,28,07,DIRECCIÓN GENERAL DE PLANIFICACIÓN DE LA INVESTIGACIÓN,,,sin_match,sin_candidato_en_subarbol
+2026,28,08,SECRETARÍA GENERAL DE INNOVACIÓN,E05083201,Secretaría General de Innovación,exacto,denominacion_normalizada
+2026,28,09,SECRETARÍA GENERAL DE UNIVERSIDADES,E05081201,Secretaría General de Universidades,exacto,denominacion_normalizada
+2026,28,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,29,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05235701,"Ministerio de Derechos Sociales, Consumo y Agenda 2030",por_denominacion,regla_servicios_generales
+2026,29,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05240001,"Subsecretaría de Derechos Sociales, Consumo y Agenda 2030",por_denominacion,regla_servicios_generales
+2026,29,02,SECRETARÍA GENERAL TÉCNICA,E04938703,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,29,03,SECRETARÍA DE ESTADO DE DERECHOS SOCIALES,E05251101,Secretaria de Estado de Derechos Sociales,exacto,denominacion_normalizada
+2026,29,04,DIRECCIÓN GENERAL DE DERECHOS DE LOS ANIMALES,E05080001,Dirección General de Derechos de los Animales,exacto,denominacion_normalizada
+2026,29,05,DIRECCIÓN GENERAL DE DIVERSIDAD FAMILIAR Y SERVICIOS SOCIALES,E05079601,Dirección General de Diversidad Familiar y Servicios Sociales,exacto,denominacion_normalizada
+2026,29,06,DIRECCIÓN GENERAL DE DERECHOS DE LAS PERSONAS CON DISCAPACIDAD,E05051302,Dirección General de Derechos de las Personas con Discapacidad,exacto,denominacion_normalizada
+2026,29,07,DIRECCIÓN GENERAL DE AGENDA 2030,E05079801,Dirección General de Agenda 2030,exacto,denominacion_normalizada
+2026,29,08,SECRETARÍA GENERAL DE CONSUMO Y JUEGO,E05081601,Secretaría General de Consumo y Juego,exacto,denominacion_normalizada
+2026,29,09,DIRECCIÓN GENERAL DE CONSUMO,E05051502,Dirección General de Consumo,exacto,denominacion_normalizada
+2026,29,10,DIRECCIÓN GENERAL DE ORDENACIÓN DEL JUEGO,E04912605,Dirección General de Ordenación del Juego,exacto,denominacion_normalizada
+2026,30,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05071601,Ministerio de Igualdad,por_denominacion,regla_servicios_generales
+2026,30,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05075301,Subsecretaría de Igualdad,por_denominacion,regla_servicios_generales
+2026,30,02,SECRETARÍA DE ESTADO DE IGUALDAD Y PARA LA ERRADICACIÓN DE LA VIOLENCIA CONTRA LAS MUJERES,E05251401,Secretaria de Estado de Igualdad y para la Erradicación de la Violencia contra las Mujeres,exacto,denominacion_normalizada
+2026,30,03,DELEGACIÓN DEL GOBIERNO CONTRA LA VIOLENCIA DE GÉNERO,E04797505,Delegación del Gobierno contra la Violencia de Género,exacto,denominacion_normalizada
+2026,31,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05237801,Ministerio de Juventud e Infancia,por_denominacion,regla_servicios_generales
+2026,31,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05240601,Subsecretaría de Juventud e Infancia,por_denominacion,regla_servicios_generales
+2026,31,02,SECRETARÍA GENERAL TÉCNICA,EA0054108,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,31,03,SECRETARÍA DE ESTADO DE JUVENTUD E INFANCIA,E05238101,Secretaría de Estado de Juventud e Infancia,exacto,denominacion_normalizada
+2026,31,04,DIRECCIÓN GENERAL DE DERECHOS DE LA INFANCIA Y LA ADOLESCENCIA,E05079401,Dirección General de Derechos de la Infancia y de la Adolescencia,por_denominacion,tokens_significativos
+2026,31,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,32,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05072501,"Ministerio de Inclusión, Seguridad Social y Migraciones",por_denominacion,regla_servicios_generales
+2026,32,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05075701,"Subsecretaría de Inclusión, Seguridad Social y Migraciones",por_denominacion,regla_servicios_generales
+2026,32,02,SECRETARÍA DE ESTADO DE SEGURIDAD SOCIAL Y PENSIONES,E05072801,Secretaría de Estado de la Seguridad Social y Pensiones,por_denominacion,tokens_significativos
+2026,32,03,SECRETARÍA DE ESTADO DE MIGRACIONES,E05073101,Secretaría de Estado de Migraciones,exacto,denominacion_normalizada
+2026,32,04,SECRETARÍA GENERAL DE INCLUSIÓN,E05082401,Secretaría General de Inclusión,exacto,denominacion_normalizada
+2026,33,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05251701,Ministerio para la Transformación Digital y de la Función Pública,por_denominacion,regla_servicios_generales
+2026,33,01,"MINISTERIO, SUBSECRETARÍA Y SERVICIOS GENERALES",E05253201,Subsecretaria para la Transformacion Digital y de la Funcion Publica,por_denominacion,regla_servicios_generales
+2026,33,02,SECRETARÍA GENERAL TÉCNICA,EA0054369,Secretaría General Técnica,exacto,denominacion_normalizada
+2026,33,03,SECRETARÍA DE ESTADO DE TELECOMUNICACIONES E INFRAESTRUCTURAS DIGITALES,E05252001,Secretaria de Estado de Telecomunicaciones e Infraestructuras Digitales,exacto,denominacion_normalizada
+2026,33,04,SECRETARÍA DE ESTADO DE DIGITALIZACIÓN E INTELIGENCIA ARTIFICIAL,E05252301,Secretaria de Estado de Digitalización e Inteligencia Artificial,exacto,denominacion_normalizada
+2026,33,06,SECRETARÍA DE ESTADO DE FUNCIÓN PÚBLICA,E05252501,Secretaria de Estado de Función Pública,exacto,denominacion_normalizada
+2026,33,50,MECANISMO DE RECUPERACIÓN Y RESILIENCIA,,,sin_match,servicio_instrumental_prtr
+2026,34,01,DIRECCIÓN GENERAL FONDOS COMUNITARIOS. RELACIONES FINANCIERAS CON LA UNIÓN EUROPEA,,,sin_match,seccion_sin_ministerio_dir3
+2026,35,01,DIRECCIÓN GENERAL DE PRESUPUESTOS. FONDO DE CONTINGENCIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,03,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. GALICIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,04,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. ANDALUCÍA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,05,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. PRINCIPADO DE ASTURIAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,06,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CANTABRIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,08,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. REGIÓN DE MURCIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,09,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. COMUNIDAD VALENCIANA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,11,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CASTILLA-LA MANCHA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,12,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CANARIAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,14,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. EXTREMADURA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,17,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CASTILLA Y LEÓN,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,18,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CEUTA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,19,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. MELILLA,,,sin_match,seccion_sin_ministerio_dir3
+2026,36,20,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. VARIAS CC. AA.,,,sin_match,seccion_sin_ministerio_dir3
+2026,37,01,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. COMUNIDADES AUTÓNOMAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,37,02,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. ENTIDADES LOCALES,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,01,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. PAÍS VASCO,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,02,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CATALUÑA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,03,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. GALICIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,04,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. ANDALUCÍA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,05,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. PRINCIPADO DE ASTURIAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,06,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CANTABRIA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,07,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. LA RIOJA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,10,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. ARAGÓN,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,11,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CASTILLA-LA MANCHA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,12,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CANARIAS,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,13,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. NAVARRA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,14,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. EXTREMADURA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,17,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CASTILLA Y LEÓN,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,18,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. MELILLA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,19,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. CEUTA,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,20,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. VARIAS CC. AA.,,,sin_match,seccion_sin_ministerio_dir3
+2026,38,21,SECRETARÍA GENERAL DE FINANCIACIÓN AUTONÓMICA Y LOCAL. ENTIDADES LOCALES,,,sin_match,seccion_sin_ministerio_dir3

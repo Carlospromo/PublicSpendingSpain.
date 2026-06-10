@@ -40,7 +40,10 @@ def extract(
     source: str = typer.Option(
         ...,
         "--source",
-        help="Fuente a extraer: igae, pge, placsp, bdns, boe, consejo_ministros, dir3, invente.",
+        help=(
+            "Fuente a extraer: igae, pge, pge_organica, placsp, bdns, boe, "
+            "consejo_ministros, dir3, invente."
+        ),
     ),
     latest: bool = typer.Option(
         False,
@@ -49,18 +52,19 @@ def extract(
     ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
-    if source == "dir3":
+    if source in ("dir3", "pge_organica"):
         _bootstrap_repo_root()
-        from gasto_estado.extractors import dir3
+        from gasto_estado.extractors import dir3, pge_organica
         from gasto_estado.extractors.base import SourceBlockedError
 
+        extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
         try:
-            saved = dir3.extract()
+            saved = extractor()
         except SourceBlockedError as exc:
             typer.echo(f"error: {exc}", err=True)
             raise typer.Exit(code=1) from exc
         for path in saved:
-            typer.echo(f"dir3: guardado {path}")
+            typer.echo(f"{source}: guardado {path}")
         return
 
     typer.echo(

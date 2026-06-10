@@ -1,0 +1,129 @@
+# ---------------------------------------------------------------------------
+# Catálogo de fuentes de datos — gasto-estado
+#
+# Cada fuente declara: nombre, descripción, URL base o patrón, formato,
+# periodicidad y perímetro. Los patrones NO confirmados con una petición real
+# están marcados con "TODO: verificar". No codificar parsers contra URLs
+# sin verificar (ver CLAUDE.md §4).
+# ---------------------------------------------------------------------------
+
+igae_mensual:
+  nombre: "IGAE — Ejecución del Presupuesto. AGE"
+  descripcion: >
+    Ejecución presupuestaria mensual de la Administración General del Estado.
+    Anexo I = gasto por clasificación orgánica/programa/económica (pieza clave).
+    Incluye también Cuadros, Anexo II, Extracto de ejecución y Avance comentado
+    de pagos. Histórico desde 2003. Publicación ~25-30 días tras cierre de mes.
+  url_base: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx"
+  # Patrón orientativo según CLAUDE.md; cambia ligeramente entre meses/años.
+  # TODO: verificar con una petición real antes de implementar el extractor.
+  url_pattern: ".../Documents/MENSUAL%20<MES>%20<AÑO>%20ANEXO%20I.xlsx"
+  formato: "XLSX (+ PDF)"
+  periodicidad: "mensual"
+  perimetro: "AGE"
+
+igae_organismos:
+  nombre: "IGAE — Ejecución del Presupuesto. Organismos"
+  descripcion: >
+    Ejecución presupuestaria de organismos autónomos (OOAA) y otros organismos
+    estatales. Misma página índice que la serie AGE.
+  url_base: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx"
+  url_pattern: null  # TODO: verificar patrón de descarga de los ficheros
+  formato: "XLSX (+ PDF)"
+  periodicidad: "mensual"
+  perimetro: "OOAA y otros organismos estatales"
+
+igae_contabilidad_nacional:
+  nombre: "IGAE — Contabilidad Nacional (CIGAE)"
+  descripcion: >
+    Déficit en términos de contabilidad nacional (SEC-2010). Serie SEPARADA de
+    la contabilidad presupuestaria: nunca mezclar (ver CLAUDE.md §1 y §3).
+  url_base: null  # TODO: verificar página índice y patrón de descarga
+  formato: "XLSX (+ PDF)"
+  periodicidad: "mensual"
+  perimetro: "AGE / sector Administraciones Públicas"
+
+igae_pmp:
+  nombre: "IGAE — Informes PMP / Registro Contable de Facturas"
+  descripcion: >
+    Periodo medio de pago y plazos de pago por ministerio.
+  url_base: null  # TODO: verificar página índice y patrón de descarga
+  formato: "XLSX"
+  periodicidad: "mensual"
+  perimetro: "AGE"
+
+pge:
+  nombre: "PGE — Presupuestos Generales del Estado (créditos iniciales)"
+  descripcion: >
+    Créditos iniciales al máximo detalle, publicados por la SEPG y en
+    datos.gob.es. En años de prórroga distinguir crédito inicial legal vs
+    operativo.
+  url_base: null  # TODO: verificar dataset concreto en SEPG / datos.gob.es
+  formato: "CSV"
+  periodicidad: "anual (o prórroga)"
+  perimetro: "AGE + organismos estatales"
+
+placsp:
+  nombre: "PLACSP — Plataforma de Contratación del Sector Público (datos abiertos)"
+  descripcion: >
+    Licitaciones y adjudicaciones en formato ATOM/XML CODICE. Tres datasets:
+    perfiles propios, agregación CCAA y contratos menores. ZIP por año (desde
+    2012) o por mes del año en curso. Paginación: seguir atom:link@rel="next";
+    máx. 500 entradas por fichero. Sindicación 643 = licitaciones perfil PLACSP
+    sin contratos menores.
+  url_base: "https://contrataciondelsectorpublico.gob.es/wps/portal/DatosAbiertos"
+  url_pattern: null  # TODO: verificar URLs de los ZIP anuales/mensuales
+  formato: "ATOM/XML (CODICE), ZIP"
+  periodicidad: "diaria"
+  perimetro: "Sector público estatal (v1: filtrar AGE + organismos estatales)"
+
+bdns:
+  nombre: "BDNS / SNPSAP — Sistema Nacional de Publicidad de Subvenciones"
+  descripcion: >
+    Convocatorias y concesiones de subvenciones vía API REST de
+    infosubvenciones.es, con órgano concedente a nivel de dirección general.
+  url_base: "https://www.infosubvenciones.es"  # TODO: verificar endpoints de la API REST
+  formato: "API REST (JSON)"
+  periodicidad: "diaria"
+  perimetro: "AGE + organismos estatales (v1)"
+
+boe:
+  nombre: "BOE — Sumario diario (API XML)"
+  descripcion: >
+    Sumario diario del BOE: modificaciones de crédito, reales decretos de
+    concesión de créditos extraordinarios/suplementos, convocatorias.
+  url_base: "https://www.boe.es"  # TODO: verificar endpoint del sumario XML
+  formato: "XML"
+  periodicidad: "diaria"
+  perimetro: "AGE"
+
+consejo_ministros:
+  nombre: "Consejo de Ministros — Referencias (La Moncloa)"
+  descripcion: >
+    Acuerdos del Consejo de Ministros: autorizaciones de gasto, transferencias
+    de crédito, convenios. HTML estructurado, publicado tras la reunión semanal
+    (martes).
+  url_base: "https://www.lamoncloa.gob.es"  # TODO: verificar URL de las referencias
+  formato: "HTML"
+  periodicidad: "semanal (martes)"
+  perimetro: "AGE"
+
+dir3:
+  nombre: "DIR3 — Directorio Común de Unidades Orgánicas"
+  descripcion: >
+    Árbol orgánico ministerio → secretaría de Estado → dirección general con
+    códigos únicos. Base del crosswalk servicio presupuestario ↔ DIR3.
+  url_base: "https://datos.gob.es"  # TODO: verificar dataset CSV concreto en datos.gob.es
+  formato: "CSV"
+  periodicidad: "continua"
+  perimetro: "AGE (unidades orgánicas estatales)"
+
+invente:
+  nombre: "INVENTE — Inventario de Entes del Sector Público estatal"
+  descripcion: >
+    Perímetro de entidades del sector público estatal. Define qué organismos
+    entran en el alcance del proyecto.
+  url_base: null  # TODO: verificar página de descarga (IGAE/Hacienda)
+  formato: null  # TODO: verificar formato de publicación
+  periodicidad: "continua"
+  perimetro: "Sector público estatal"

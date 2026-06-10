@@ -1,0 +1,20 @@
+# ---------------------------------------------------------------------------
+# weekly.yml — Esqueleto (Fase 0). Sin jobs reales todavía.
+#
+# Pipeline semanal/diario de git-scraping para la capa de alta frecuencia:
+#   - PLACSP (datos abiertos, ATOM/XML CODICE) — diaria
+#   - BDNS / infosubvenciones (API REST)       — diaria
+#   - BOE (sumario diario, API XML)            — diaria
+#   - Consejo de Ministros (La Moncloa, HTML)  — semanal (publica los martes)
+#   - DIR3 (dimensión orgánica, CSV)           — refresco semanal
+#
+# Cadencia prevista: lunes (CLAUDE.md §5); si la capa diaria lo requiere,
+# se desdoblará en un workflow diario aparte en la Fase 7.
+#
+#   on:
+#     schedule:
+#       - cron: "0 6 * * 1"        # 06:00 UTC, lunes
+#     workflow_dispatch: {}        # ejecución manual
+#
+# Se implementará en la Fase 7 (Automatización CI/CD).
+# ---------------------------------------------------------------------------

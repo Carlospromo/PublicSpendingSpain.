@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Entornos virtuales / uv
+.venv/
+venv/
+.python-version
+
+# Herramientas de calidad y tests
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# DuckDB / almacén analítico (se reconstruye desde raw)
+data/warehouse.duckdb
+data/*.duckdb
+data/*.duckdb.wal
+data/**/*.parquet
+
+# La capa raw SÍ se versiona (git-scraping): no ignorar data/raw/
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,20 @@
+# ---------------------------------------------------------------------------
+# monthly.yml — Esqueleto (Fase 0). Sin jobs reales todavía.
+#
+# Pipeline mensual de git-scraping para la verdad contable (IGAE):
+#   - Fuentes: IGAE Ejecución AGE (Anexo I), IGAE Organismos, IGAE CIGAE
+#     (contabilidad nacional), IGAE PMP, y PGE inicial (anual).
+#   - Flujo previsto: extract --source igae --latest → parse → check → load
+#     → commit del dato ("data(igae): add execution YYYY-MM").
+#
+# Cadencia prevista: la IGAE publica ~25-30 días tras el cierre de mes, así
+# que se sondea a diario entre los días 20 y 31 y se sale sin cambios si aún
+# no hay dato nuevo (idempotencia).
+#
+#   on:
+#     schedule:
+#       - cron: "0 7 20-31 * *"   # 07:00 UTC, días 20-31 de cada mes
+#     workflow_dispatch: {}        # ejecución manual para backfill/depuración
+#
+# Se implementará en la Fase 7 (Automatización CI/CD).
+# ---------------------------------------------------------------------------

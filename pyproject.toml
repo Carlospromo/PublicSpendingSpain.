@@ -1,0 +1,71 @@
+[project]
+name = "gasto-estado"
+version = "0.1.0"
+description = "Monitorización y auditoría del gasto del Estado español a nivel de dirección general / servicio presupuestario"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx==0.28.1",
+    "tenacity==9.1.4",
+    "pandas==3.0.3",
+    "openpyxl==3.1.5",
+    "lxml==6.1.1",
+    "pandera==0.31.1",
+    "duckdb==1.5.3",
+    "fastapi==0.136.3",
+    "uvicorn==0.49.0",
+    "typer==0.26.7",
+    # pyyaml: necesaria para cargar config/sources.yaml (catálogo de fuentes)
+    "pyyaml==6.0.3",
+]
+
+[project.scripts]
+gasto-estado = "gasto_estado.cli:app"
+
+[dependency-groups]
+dev = [
+    "ruff==0.15.16",
+    "mypy==2.1.0",
+    "pytest==9.0.3",
+    # types-pyyaml: stubs de tipado para que mypy --strict acepte pyyaml
+    "types-pyyaml==6.0.12.20260518",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gasto_estado"]
+
+# ---------------------------------------------------------------------------
+# Calidad de código
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+strict = true
+warn_unreachable = true
+pretty = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

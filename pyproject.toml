@@ -29,6 +29,9 @@ dev = [
     "pytest==9.0.3",
     # types-pyyaml: stubs de tipado para que mypy --strict acepte pyyaml
     "types-pyyaml==6.0.12.20260518",
+    # pandas-stubs / types-openpyxl: stubs de tipado para mypy --strict
+    "pandas-stubs==3.0.3.260530",
+    "types-openpyxl==3.1.5.20260518",
 ]
 
 [build-system]

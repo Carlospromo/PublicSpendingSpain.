@@ -124,19 +124,24 @@ dir3:
   perimetro: "AGE (unidades orgánicas estatales); EELL excluido en v1"
   # Distribuciones a descargar. La unidad AGE es el árbol orgánico (pieza clave);
   # los catálogos de tipos sirven para decodificar códigos. EELL queda fuera de v1.
+  # "requerido: false" = si el WAF bloquea la descarga se avisa y se continúa
+  # (son catálogos decodificadores; el parser no los necesita).
   files:
     - key: "unidades_age"
       filename: "Listado Unidades AGE.xlsx"
       url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Listado%20Unidades%20AGE.xlsx?idIniciativa=238&idElemento=2741"
       descripcion: "Árbol orgánico de la AGE (pieza clave)."
+      requerido: true
     - key: "tipos_unidad_organica"
       filename: "Catalogo de Tipos de Unidad Organica.xlsx"
       url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Catalogo%20de%20Tipos%20de%20Unidad%20Organica.xlsx?idIniciativa=238&idElemento=424"
       descripcion: "Catálogo de tipos de unidad orgánica (decodifica el tipo)."
+      requerido: false
     - key: "tipos_entidad_publica"
       filename: "Catalogo de Tipos de Entidad Publica.xlsx"
       url: "https://administracionelectronica.gob.es/ctt/resources/Soluciones/238/Descargas/Catalogo%20de%20Tipos%20de%20Entidad%20Publica.xlsx?idIniciativa=238&idElemento=423"
       descripcion: "Catálogo de tipos de entidad pública (decodifica la entidad)."
+      requerido: false
 
 invente:
   nombre: "INVENTE — Inventario de Entes del Sector Público estatal"

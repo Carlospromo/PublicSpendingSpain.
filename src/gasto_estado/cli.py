@@ -27,6 +27,14 @@ def extract(
     ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
+    if source == "dir3":
+        from gasto_estado.extractors import dir3
+
+        saved = dir3.extract()
+        for path in saved:
+            typer.echo(f"dir3: guardado {path}")
+        return
+
     typer.echo(
         f"extract --source {source} --latest={latest}: "
         "no implementado — Fase 2 (IGAE) / Fase 4 (alta frecuencia)"

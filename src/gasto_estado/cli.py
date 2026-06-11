@@ -83,16 +83,35 @@ def extract(
     )
 
 
+def _run_load(operacion: str) -> None:
+    _bootstrap_repo_root()
+    from config import settings
+
+    from gasto_estado.db import load as db_load
+
+    try:
+        runner = {"build": db_load.build, "update": db_load.update}[operacion]
+        stats = runner(settings.WAREHOUSE_PATH, settings.RAW_DIR)
+    except db_load.OrphanOrganicError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    for periodo, filas in stats.items():
+        typer.echo(f"{operacion}: {periodo} -> {filas} filas")
+    if not stats:
+        typer.echo(f"{operacion}: sin periodos nuevos en raw; warehouse al día.")
+    typer.echo(f"{operacion}: warehouse en {settings.WAREHOUSE_PATH}")
+
+
 @app.command()
 def build() -> None:
-    """Reconstruye el warehouse completo desde la capa raw."""
-    typer.echo("build: no implementado — Fase 3")
+    """Reconstruye el warehouse completo desde la capa raw + seeds."""
+    _run_load("build")
 
 
 @app.command()
 def update() -> None:
-    """Extracción incremental + carga + validaciones contables."""
-    typer.echo("update: no implementado — Fase 3")
+    """Carga incremental de los periodos de raw aún no presentes."""
+    _run_load("update")
 
 
 @app.command()

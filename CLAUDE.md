@@ -229,8 +229,8 @@ Toda carga DEBE pasar estos checks (en `quality/checks.py`). Si fallan: parar y 
 
 > Actualizar esta sección al cerrar cada fase.
 
-- [ ] Fase 0 — Andamiaje del repo
-- [ ] Fase 1 — Dimensiones orgánicas y crosswalk DIR3
+- [x] Fase 0 — Andamiaje del repo
+- [x] Fase 1 — Dimensiones orgánicas y crosswalk DIR3
 - [ ] Fase 2 — Extractor + parser IGAE mensual (Anexo I)
 - [ ] Fase 3 — Warehouse, carga idempotente y validaciones contables
 - [ ] Fase 4 — Capa de alta frecuencia (PLACSP, BDNS, BOE, CdM)

@@ -13,11 +13,21 @@ igae_mensual:
     Ejecución presupuestaria mensual de la Administración General del Estado.
     Anexo I = gasto por clasificación orgánica/programa/económica (pieza clave).
     Incluye también Cuadros, Anexo II, Extracto de ejecución y Avance comentado
-    de pagos. Histórico desde 2003. Publicación ~25-30 días tras cierre de mes.
+    de pagos. Histórico desde 2003 (selector hasta 2001). Publicación ~25-30
+    días tras cierre de mes. VERIFICADO 2026-06-11 con peticiones reales:
+    el patrón de fichero resuelve para 2019+; en ≤2018 el nombre lleva a veces
+    el sufijo " (EXCEL)" de forma inconsistente → para históricos antiguos,
+    scrapear la página del año. Estructura del Anexo I documentada en
+    docs/igae_anexo_i_estructura.md.
   url_base: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx"
-  # Patrón orientativo según CLAUDE.md; cambia ligeramente entre meses/años.
-  # TODO: verificar con una petición real antes de implementar el extractor.
-  url_pattern: ".../Documents/MENSUAL%20<MES>%20<AÑO>%20ANEXO%20I.xlsx"
+  # Página navegable de la publicación AGE (año en curso); históricos en
+  # imejecucionpresupuesto<YYYY>.aspx (verificado 2012-2025).
+  url_index: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/imejecucionpresupuesto.aspx"
+  # Directorio de documentos; el Anexo I es
+  # "<url_documents>/MENSUAL%20<MES>%20<AÑO>%20ANEXO%20I.xlsx" con el mes en
+  # mayúsculas en español (mismo directorio: Cuadros "MENSUAL <MES> <AÑO>.xlsx"
+  # y "... ANEXO II.xlsx").
+  url_documents: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Documents"
   formato: "XLSX (+ PDF)"
   periodicidad: "mensual"
   perimetro: "AGE"
@@ -57,11 +67,30 @@ pge:
   descripcion: >
     Créditos iniciales al máximo detalle, publicados por la SEPG y en
     datos.gob.es. En años de prórroga distinguir crédito inicial legal vs
-    operativo.
-  url_base: null  # TODO: verificar dataset concreto en SEPG / datos.gob.es
-  formato: "CSV"
+    operativo. VERIFICADO 2026-06: el árbol PGE-ROM de la SEPG publica los
+    estados de gastos por programa en CSV/XML (latin-1, separador ';');
+    el dataset agregado de datos.gob.es solo enlaza páginas de aterrizaje.
+  url_base: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/Indice.htm"
+  formato: "CSV (latin-1, ';') / XML / HTM"
   periodicidad: "anual (o prórroga)"
   perimetro: "AGE + organismos estatales"
+
+pge_organica:
+  nombre: "PGE — Clasificación orgánica (secciones y servicios presupuestarios)"
+  descripcion: >
+    Relación oficial de secciones y servicios presupuestarios del PGE vigente,
+    del documento "Resumen general por servicios y capítulos del presupuesto
+    de gastos" (Serie verde del PGE-ROM, SEPG). VERIFICADO 2026-06: en 2026
+    rige la prórroga del PGE 2025 (etiqueta oficial "2025-P"); el árbol
+    PGE2025Prorroga refleja la estructura ministerial vigente (37 secciones,
+    22 ministerios). CSV en latin-1 con separador ';'. La URL cambia con cada
+    ejercicio/prórroga: actualizarla al publicarse un nuevo PGE.
+  url_base: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/Indice.htm"
+  url_resumen_servicios: "https://www.sepg.pap.hacienda.gob.es/Presup/PGE2025Prorroga/MaestroDocumentos/PGE-ROM/doc/CSV/N_25P_E_V_1_101_1_1_2_A_1.CSV"
+  formato: "CSV (latin-1, ';')"
+  periodicidad: "anual (o prórroga)"
+  perimetro: "Estado (secciones 01-38); OOAA y resto de entidades aparte"
+  ejercicio_vigente: 2026
 
 placsp:
   nombre: "PLACSP — Plataforma de Contratación del Sector Público (datos abiertos)"

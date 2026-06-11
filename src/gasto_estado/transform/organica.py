@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from gasto_estado.transform.nivel_organico import classify
+
 # Columnas de la dimensión, en el orden canónico (CLAUDE.md §8).
 DIM_COLUMNS = [
     "seccion_cod",  # TODO Prompt 3: crosswalk PGE↔DIR3
@@ -27,6 +29,8 @@ DIM_COLUMNS = [
     "ministerio_dir3_cod",
     "ministerio_denominacion",
     "nivel_jerarquico",
+    "nivel_organico",
+    "nivel_organico_senal",
     "estado",
     "fecha_inicio",
     "fecha_fin",
@@ -45,6 +49,12 @@ def build_dim_organica(unidades: pd.DataFrame, *, capture_date: date) -> pd.Data
       para extinguidas/anuladas (el snapshot ya no las considera vivas).
     - ``seccion_cod``/``servicio_cod``: null hasta el crosswalk del Prompt 3.
     """
+    clasificacion = [
+        classify(denominacion, nivel)
+        for denominacion, nivel in zip(
+            unidades["denominacion"], unidades["nivel_jerarquico"], strict=True
+        )
+    ]
     dim = pd.DataFrame(
         {
             "seccion_cod": pd.Series([None] * len(unidades), dtype="object"),
@@ -55,6 +65,12 @@ def build_dim_organica(unidades: pd.DataFrame, *, capture_date: date) -> pd.Data
             "ministerio_dir3_cod": unidades["dir3_raiz_cod"],
             "ministerio_denominacion": unidades["denominacion_raiz"],
             "nivel_jerarquico": unidades["nivel_jerarquico"],
+            "nivel_organico": pd.Series(
+                [nivel for nivel, _ in clasificacion], index=unidades.index
+            ),
+            "nivel_organico_senal": pd.Series(
+                [senal for _, senal in clasificacion], index=unidades.index
+            ),
             "estado": unidades["estado"],
             "fecha_inicio": unidades["fecha_alta"].map(
                 lambda alta: alta if alta is not None else capture_date

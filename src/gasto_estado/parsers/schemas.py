@@ -33,7 +33,8 @@ igae_anexo_i_schema = pa.DataFrameSchema(
         # de Defensa (p. ej. 121M2). Charset incluye Ñ (programa 46ÑF).
         "programa_cod": pa.Column(str, pa.Check.str_matches(r"^[0-9A-ZÑ]{4,5}$")),
         # Desglose territorial: 2 dígitos cuando existe, nulo cuando no.
-        "provincia_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$"), nullable=True),
+        # 'DT' = Diversos Territorios (visto en el histórico, p. ej. 2016-11).
+        "provincia_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$|^DT$"), nullable=True),
         # Económica al nivel que trae el fichero: concepto (3), subconcepto (5)
         # o partida (7 dígitos).
         "economica_cod": pa.Column(str, pa.Check.str_matches(r"^\d{3}$|^\d{5}$|^\d{7}$")),

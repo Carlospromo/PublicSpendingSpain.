@@ -95,11 +95,42 @@ post-RD 829/2023 — no hay hoja S11).
 - Espacios irregulares y saltos de línea DENTRO de las etiquetas de cabecera:
   no matchear cabeceras por igualdad literal.
 
-## Vintage
+## Vintages (decisión verificada sobre ficheros reales completos, 2026-06)
 
-El fichero de abril 2026 pertenece al vintage **"2021+"** (mismo patrón de URL
-y maquetación verificados en 2019–2026 por tamaño/respuesta; la maquetación
-≤2018 queda pendiente de reconocimiento cuando se aborde el histórico).
+Inspeccionados enteros: dic-2015 (.xls), nov-2016, nov-2017, nov-2018,
+abr-2019, nov-2020 (todos parseados con cuadre interno OK). Conclusión:
+
+**La gramática interna es UNA y la misma en todo 2015–2026**: hoja resumen
+`S5` + hojas de sección `SNN`, idéntica cabecera, idéntica celda compuesta de
+aplicación, mismos subtotales `TOTAL SERVICIO` y mismo `-` para sin dato. Los
+.xlsx históricos 2016–2020 parsean con el parser 2021+ **sin ningún cambio**.
+
+La única frontera real de vintage es el **contenedor**:
+
+| Vintage (detect.py) | Contenedor | Cobertura observada | Parser |
+|---|---|---|---|
+| `2021_plus` | OOXML `.xlsx` | nov-2016 → hoy | `v2021_plus.py` |
+| `2015_2020_xls` | BIFF/OLE2 `.xls` | 2015 → abr-2016 | `v2015_2020.py` (xlrd + gramática reutilizada de v2021_plus) |
+
+La **transición ocurre DENTRO de 2016** (abr-2016 = `.xls`, nov-2016 =
+`.xlsx`): la detección va por magic bytes + estructura de hojas, nunca por
+año ni extensión.
+
+Particularidades del histórico (registradas):
+
+- **Desglose económico**: el histórico llega a concepto/subconcepto (3/5
+  dígitos); el nivel de partida (7 dígitos) solo se ha visto en 2026.
+- **`provincia_cod = "DT"`** (Diversos Territorios) en 2015 y 2016, admitido
+  en el esquema canónico junto a los 2 dígitos.
+- **Nº de hojas según la estructura ministerial del año**: 28 (2015, 2016),
+  28 (2017), 29 (2018), 33 (2020), 38 (2026).
+- **2015 solo publica en Excel el cierre de diciembre** ("PROVISIONAL"); el
+  resto de meses son solo PDF.
+- **Zoo de nomenclatura de ficheros** (otra razón para detectar por contenido
+  y scrapear la página del año): `MENSUAL DICIEMBRE PROVISIONAL 2015 … (EXCEL).xls`,
+  `MENSUAL DICIEMBRE (PROVISIONAL) 2017 … (EXCEL).xlsx`, abr-2017 **sin año**
+  (`MENSUAL ABRIL ANEXO I (EXCEL).xlsx`), nov-2019 con **doble espacio**
+  (`MENSUAL NOVIEMBRE 2019  ANEXO I.xlsx`).
 
 ## Fixture
 

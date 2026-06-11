@@ -17,7 +17,9 @@ igae_mensual:
     días tras cierre de mes. VERIFICADO 2026-06-11 con peticiones reales:
     el patrón de fichero resuelve para 2019+; en ≤2018 el nombre lleva a veces
     el sufijo " (EXCEL)" de forma inconsistente → para históricos antiguos,
-    scrapear la página del año. Estructura del Anexo I documentada en
+    scrapear la página del año. Contenedor: BIFF .xls de 2015 a ~abril 2016
+    (2015 solo publica el cierre de diciembre en Excel); OOXML .xlsx desde
+    ~noviembre 2016. Estructura y vintages documentados en
     docs/igae_anexo_i_estructura.md.
   url_base: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx"
   # Página navegable de la publicación AGE (año en curso); históricos en

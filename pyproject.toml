@@ -17,6 +17,9 @@ dependencies = [
     "typer==0.26.7",
     # pyyaml: necesaria para cargar config/sources.yaml (catálogo de fuentes)
     "pyyaml==6.0.3",
+    # xlrd: única vía para leer los Anexo I históricos en .xls (BIFF/OLE2,
+    # 2015-abril 2016); openpyxl solo lee OOXML. xlrd 2.x solo soporta .xls.
+    "xlrd==2.0.2",
 ]
 
 [project.scripts]
@@ -32,6 +35,7 @@ dev = [
     # pandas-stubs / types-openpyxl: stubs de tipado para mypy --strict
     "pandas-stubs==3.0.3.260530",
     "types-openpyxl==3.1.5.20260518",
+    "types-xlrd==2.0.0.20260518",
 ]
 
 [build-system]

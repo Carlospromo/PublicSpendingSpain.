@@ -2,8 +2,8 @@
 
 Punto de entrada invocable que toma el raw de un periodo y devuelve el
 DataFrame canónico, eligiendo el parser según el vintage detectado (CLAUDE.md
-§2: familia de parsers por época, no un parser único). El vintage 2015–2020
-llega en el Prompt 6; aquí solo 2021+.
+§2: familia de parsers por época, no un parser único). Ambos vintages emiten
+el MISMO contrato canónico (columnas, clave natural y cobertura de magnitudes).
 """
 
 from __future__ import annotations
@@ -13,18 +13,20 @@ from pathlib import Path
 
 import pandas as pd
 
-from .detect import VINTAGE_2021_PLUS, detect_vintage
+from .detect import VINTAGE_2015_2020_XLS, VINTAGE_2021_PLUS, detect_vintage
+from .v2015_2020 import parse_anexo_i as _parse_2015_2020
 from .v2021_plus import parse_anexo_i as _parse_2021_plus
+
+_PARSERS = {
+    VINTAGE_2021_PLUS: _parse_2021_plus,
+    VINTAGE_2015_2020_XLS: _parse_2015_2020,
+}
 
 
 def parse_anexo_i(path: Path, *, periodo: str, fecha_captura: date | None = None) -> pd.DataFrame:
     """Detecta el vintage del Anexo I en ``path`` y lo parsea a canónico."""
     vintage = detect_vintage(path)
-    if vintage == VINTAGE_2021_PLUS:
-        return _parse_2021_plus(path, periodo=periodo, fecha_captura=fecha_captura)
-    raise NotImplementedError(  # pragma: no cover - detect_vintage solo emite 2021+
-        f"Vintage {vintage!r} aún no soportado (2015–2020: Prompt 6)."
-    )
+    return _PARSERS[vintage](path, periodo=periodo, fecha_captura=fecha_captura)
 
 
 def parse_periodo(
@@ -43,7 +45,9 @@ def parse_periodo(
 
         raw_dir = settings.RAW_DIR
     periodo_dir = raw_dir / "igae_mensual" / periodo
-    candidatos = sorted(periodo_dir.glob("*ANEXO I.xlsx"))
+    # El nombre oficial varía con la época: '... ANEXO I.xlsx', con sufijo
+    # ' (EXCEL)', 'PROVISIONAL', o contenedor .xls — el glob los admite todos.
+    candidatos = sorted(periodo_dir.glob("*ANEXO I*.xls*"))
     if len(candidatos) != 1:
         raise FileNotFoundError(
             f"Se esperaba 1 Anexo I en {periodo_dir}, encontrados {len(candidatos)}. "

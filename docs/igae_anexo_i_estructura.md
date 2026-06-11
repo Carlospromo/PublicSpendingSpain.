@@ -54,15 +54,28 @@ post-RD 829/2023 — no hay hoja S11).
   `dim_seccion_servicio`.
 - **Col 1** (`APLICACIÓN PGE`), cuatro tipos de fila intercalados:
   1. Cabecera de programa: `923M-Dirección y Servicios Generales de…`
+     (subtotal de programa; lleva magnitudes pero NO es detalle).
   2. Aplicación: `1501  923M   12100  -Complemento de destino` →
      **orgánica completa `SSNN`** (sección 15 + servicio 01) + programa +
-     concepto/subconcepto económico + denominación, separados por espacios
-     múltiples y guion.
+     económica + denominación. **Atención a las variantes reales** (todas
+     verificadas en abril 2026, ver el parser `v2021_plus.py`):
+     - Económica de **3 (concepto), 5 (subconcepto) o 7 dígitos (partida)**.
+     - Separador económica↔denominación `  -` (2+ espacios) salvo en la
+       económica de 7 dígitos, donde va pegado: `2210201-GAS NATURAL`.
+     - **Desglose territorial por provincia**: orgánica+provincia(2)+programa
+       pegados sin espacios → `120111142A` = órg. 1201 + prov. 11 + prog. 142A.
+       Imprescindible capturar la provincia: dos filas pueden diferir solo en
+       ella (07 vs 44) y se perderían por clave duplicada.
+     - **Territorialización de Defensa**: el programa lleva un 5º carácter
+       (dígito o letra): `121M2`, `121MC`. Se conserva en `programa_cod`
+       (el grupo de programa estándar es `programa_cod[:4]`).
+     - El programa puede contener `Ñ` (`46ÑF`).
+     - La denominación puede empezar por dígito (`-16ª Reposición del Fondo…`).
   3. Fila en blanco (separador entre programas).
   4. Subtotal: `TOTAL SERVICIO` (cierra cada bloque de servicio).
   Conviven, por tanto, niveles de agregación mezclados en la misma hoja; el
-  parser deberá quedarse con las filas de aplicación y validar contra los
-  subtotales (checks §7 de CLAUDE.md).
+  parser se queda con las filas de aplicación y valida que su suma cuadra con
+  el `TOTAL SERVICIO` (validación interna del parseo, §7 de CLAUDE.md).
 - Ejemplo de volumetría: S15 (Hacienda) = 597 filas, 15 bloques de servicio
   (incluido `MECANISMO DE RECUPERACIÓN Y RESILIENCIA` = servicio .50).
 

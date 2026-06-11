@@ -8,6 +8,44 @@ from __future__ import annotations
 
 import pandera.pandas as pa
 
+# ---------------------------------------------------------------------------
+# IGAE — Anexo I mensual (detalle por aplicación presupuestaria)
+#
+# COBERTURA DE MAGNITUDES: el Anexo I cubre crédito inicial, crédito definitivo
+# y ORN. NO trae comprometido ni pagos (llegarán de Cuadros/Anexo II en un
+# prompt posterior): por eso esas columnas NO existen aquí, en lugar de
+# rellenarse con ceros/nulos silenciosos. La Fase 3 no debe validar
+# "pagos ≤ ORN" sobre esta fuente.
+#
+# Las magnitudes son nullable: el texto "-" del fichero (sin dato) se mapea a
+# nulo, que es distinto de 0.
+# ---------------------------------------------------------------------------
+
+igae_anexo_i_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("igae_anexo_i")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        "seccion_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$")),
+        "servicio_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$")),
+        "servicio_denominacion": pa.Column(str, nullable=True),
+        # Grupo de programa (4 car.); el 5º opcional es la territorialización
+        # de Defensa (p. ej. 121M2). Charset incluye Ñ (programa 46ÑF).
+        "programa_cod": pa.Column(str, pa.Check.str_matches(r"^[0-9A-ZÑ]{4,5}$")),
+        # Desglose territorial: 2 dígitos cuando existe, nulo cuando no.
+        "provincia_cod": pa.Column(str, pa.Check.str_matches(r"^\d{2}$"), nullable=True),
+        # Económica al nivel que trae el fichero: concepto (3), subconcepto (5)
+        # o partida (7 dígitos).
+        "economica_cod": pa.Column(str, pa.Check.str_matches(r"^\d{3}$|^\d{5}$|^\d{7}$")),
+        "aplicacion_denominacion": pa.Column(str),
+        "credito_inicial": pa.Column(float, nullable=True),
+        "credito_definitivo": pa.Column(float, nullable=True),
+        "orn": pa.Column(float, nullable=True),
+    },
+    strict=True,
+    coerce=False,
+)
+
 # Estados oficiales de una unidad DIR3 (hoja "Catálogos de clasificación" del
 # fichero oficial): Vigente, Extinguido, Anulado, Transitorio.
 DIR3_ESTADOS = ("V", "E", "A", "T")

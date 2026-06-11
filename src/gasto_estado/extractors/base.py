@@ -80,21 +80,24 @@ def download_to_raw(
     filename: str,
     raw_dir: Path,
     capture_date: date | None = None,
+    subdir: str | None = None,
     expected_magic: bytes | None = XLSX_MAGIC,
     headers: dict[str, str] | None = None,
     timeout: float = DEFAULT_TIMEOUT,
 ) -> Path:
     """Descarga ``url`` y la guarda, inmutable, en la capa raw.
 
-    Devuelve la ruta del fichero guardado. Si ya existe una captura para esa fecha,
-    NO se sobrescribe (idempotencia + inmutabilidad del raw, CLAUDE.md §2).
+    El subdirectorio de captura es ``subdir`` si se indica (p. ej. el periodo
+    ``YYYY-MM`` del dato en fuentes mensuales) o, por defecto, la fecha de
+    captura ISO. Devuelve la ruta del fichero guardado. Si ya existe una
+    captura, NO se sobrescribe (idempotencia + inmutabilidad, CLAUDE.md §2).
 
     Si ``expected_magic`` se indica y el contenido no empieza por esa firma, se
     interpreta como respuesta inválida (WAF, HTML de error...) y se lanza
     ``SourceBlockedError`` sin escribir nada.
     """
     capture_date = capture_date or date.today()
-    target_dir = capture_dir(raw_dir, fuente, capture_date)
+    target_dir = raw_dir / fuente / (subdir or capture_date.isoformat())
     target = target_dir / filename
 
     if target.exists():

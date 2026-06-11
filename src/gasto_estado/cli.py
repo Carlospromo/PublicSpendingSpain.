@@ -50,17 +50,28 @@ def extract(
         "--latest",
         help="Descargar solo el último dato disponible (en lugar del histórico).",
     ),
+    periodo: str | None = typer.Option(
+        None,
+        "--periodo",
+        help="Periodo mensual explícito (YYYY-MM); solo para fuentes mensuales (igae).",
+    ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
-    if source in ("dir3", "pge_organica"):
+    if source in ("dir3", "pge_organica", "igae"):
         _bootstrap_repo_root()
-        from gasto_estado.extractors import dir3, pge_organica
+        from gasto_estado.extractors import dir3, igae_mensual, pge_organica
         from gasto_estado.extractors.base import SourceBlockedError
 
-        extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
         try:
-            saved = extractor()
+            if source == "igae":
+                saved = igae_mensual.extract(periodo=periodo)
+            else:
+                extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
+                saved = extractor()
         except SourceBlockedError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        except ValueError as exc:
             typer.echo(f"error: {exc}", err=True)
             raise typer.Exit(code=1) from exc
         for path in saved:
@@ -68,8 +79,7 @@ def extract(
         return
 
     typer.echo(
-        f"extract --source {source} --latest={latest}: "
-        "no implementado — Fase 2 (IGAE) / Fase 4 (alta frecuencia)"
+        f"extract --source {source} --latest={latest}: no implementado — Fase 4 (alta frecuencia)"
     )
 
 

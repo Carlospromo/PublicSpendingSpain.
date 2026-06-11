@@ -13,11 +13,21 @@ igae_mensual:
     Ejecución presupuestaria mensual de la Administración General del Estado.
     Anexo I = gasto por clasificación orgánica/programa/económica (pieza clave).
     Incluye también Cuadros, Anexo II, Extracto de ejecución y Avance comentado
-    de pagos. Histórico desde 2003. Publicación ~25-30 días tras cierre de mes.
+    de pagos. Histórico desde 2003 (selector hasta 2001). Publicación ~25-30
+    días tras cierre de mes. VERIFICADO 2026-06-11 con peticiones reales:
+    el patrón de fichero resuelve para 2019+; en ≤2018 el nombre lleva a veces
+    el sufijo " (EXCEL)" de forma inconsistente → para históricos antiguos,
+    scrapear la página del año. Estructura del Anexo I documentada en
+    docs/igae_anexo_i_estructura.md.
   url_base: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx"
-  # Patrón orientativo según CLAUDE.md; cambia ligeramente entre meses/años.
-  # TODO: verificar con una petición real antes de implementar el extractor.
-  url_pattern: ".../Documents/MENSUAL%20<MES>%20<AÑO>%20ANEXO%20I.xlsx"
+  # Página navegable de la publicación AGE (año en curso); históricos en
+  # imejecucionpresupuesto<YYYY>.aspx (verificado 2012-2025).
+  url_index: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/imejecucionpresupuesto.aspx"
+  # Directorio de documentos; el Anexo I es
+  # "<url_documents>/MENSUAL%20<MES>%20<AÑO>%20ANEXO%20I.xlsx" con el mes en
+  # mayúsculas en español (mismo directorio: Cuadros "MENSUAL <MES> <AÑO>.xlsx"
+  # y "... ANEXO II.xlsx").
+  url_documents: "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Documents"
   formato: "XLSX (+ PDF)"
   periodicidad: "mensual"
   perimetro: "AGE"

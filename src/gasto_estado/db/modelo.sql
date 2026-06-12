@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS dim_organica (
     nivel_jerarquico         INTEGER,
     nivel_organico           VARCHAR,
     nivel_organico_senal     VARCHAR,
+    -- Tipo de entidad pública DIR3 (MN = estructura ministerial AGE; OA/AT/EE/
+    -- SM/AP/… = ente con presupuesto propio): frontera de perímetro del anclaje.
+    tipo_entidad             VARCHAR,
     estado                   VARCHAR,
     fecha_inicio             DATE NOT NULL,
     fecha_fin                DATE,
@@ -198,6 +201,71 @@ CREATE INDEX IF NOT EXISTS idx_fact_ejecucion_programa
 CREATE INDEX IF NOT EXISTS idx_fact_ejecucion_economica
     ON fact_ejecucion (economica_cod);
 
+-- Adjudicaciones PLACSP (velocidad "compromisos jurídicos", Fase 4). Esquema
+-- fijado tras inspeccionar la fuente real (docs/placsp_estructura.md).
+--
+--  * Clave natural = (licitacion_id, lote_id): el id numérico de plataforma es
+--    estable entre republicaciones (VERIFICADO sobre el ZIP 2012); el
+--    expediente_id NO es único entre órganos. lote_id '0' = sin lotes.
+--  * Semántica de upsert = ÚLTIMA FOTO de cada licitación (la recarga borra el
+--    bloque completo de la licitación y lo reinserta): PLACSP republica el
+--    mismo expediente con estado actualizado; el historial de fotos queda en
+--    la capa raw versionada (git-scraping), no en el warehouse.
+--  * Anclaje orgánico explícito (anclaje_tipo/anclaje_senal): servicio |
+--    organica_sin_servicio | fuera_perimetro | sin_anclar. seccion/servicio
+--    solo informados si ancla a servicio; "sin anclar" se CONSERVA y cuenta.
+--  * es_cabecera_expediente: exactamente una fila por licitación lleva las
+--    magnitudes de licitación (presupuesto_*, valor_estimado) para que sumen
+--    sin doble conteo; importe_adjudicacion es aditivo en todas las filas.
+--  * Importes: con/sin IVA SEPARADOS (presupuesto_con_iva incluye impuestos;
+--    el importe de adjudicación CODICE es el PayableAmount del lote).
+CREATE TABLE IF NOT EXISTS fact_contratos (
+    licitacion_id            VARCHAR NOT NULL,
+    lote_id                  VARCHAR NOT NULL,
+    fuente_cod               VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo                  VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio                INTEGER NOT NULL,
+    expediente_id            VARCHAR,
+    es_cabecera_expediente   BOOLEAN NOT NULL,
+    organo_id                VARCHAR,
+    organo_id_esquema        VARCHAR,
+    organo_dir3_cod          VARCHAR,
+    organo_denominacion      VARCHAR,
+    seccion_cod              VARCHAR,
+    servicio_cod             VARCHAR,
+    anclaje_dir3_cod         VARCHAR,
+    anclaje_tipo             VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('servicio', 'organica_sin_servicio', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal            VARCHAR NOT NULL,
+    tipo_contrato_cod        VARCHAR,
+    subtipo_contrato_cod     VARCHAR,
+    procedimiento_cod        VARCHAR,
+    cpv_cod                  VARCHAR,
+    estado_cod               VARCHAR,
+    resultado_cod            VARCHAR,
+    presupuesto_sin_iva      DOUBLE,
+    presupuesto_con_iva      DOUBLE,
+    valor_estimado           DOUBLE,
+    importe_adjudicacion     DOUBLE,
+    num_ofertas              VARCHAR,
+    adjudicatario_id         VARCHAR,
+    adjudicatario_id_esquema VARCHAR,
+    adjudicatario_nombre     VARCHAR,
+    adjudicatario_es_pyme    BOOLEAN,
+    fecha_adjudicacion       DATE,
+    fecha_formalizacion      DATE,
+    fecha_actualizacion      DATE,
+    fecha_captura            DATE NOT NULL,
+    PRIMARY KEY (licitacion_id, lote_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_organica
+    ON fact_contratos (ejercicio, seccion_cod, servicio_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_adjudicatario
+    ON fact_contratos (adjudicatario_id);
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_organo
+    ON fact_contratos (organo_dir3_cod);
+
 -- ----------------------------------------------------------------------------
 -- Vistas de exposición
 -- ----------------------------------------------------------------------------
@@ -245,6 +313,52 @@ JOIN dim_seccion_servicio ss
    AND ss.servicio_cod = f.servicio_cod
 JOIN dim_programa pr USING (programa_cod)
 JOIN dim_economica ec USING (economica_cod);
+
+-- Adjudicaciones desnormalizadas con su ancla orgánica (LEFT JOIN: las no
+-- ancladas se exponen igualmente — "sin anclar contabilizado es información").
+CREATE OR REPLACE VIEW v_contratos AS
+SELECT
+    c.licitacion_id,
+    c.lote_id,
+    c.expediente_id,
+    c.periodo,
+    c.ejercicio,
+    p.mes,
+    c.organo_dir3_cod,
+    c.organo_denominacion,
+    c.organo_id_esquema,
+    c.seccion_cod,
+    ss.seccion_denominacion,
+    c.servicio_cod,
+    ss.servicio_denominacion,
+    c.anclaje_tipo,
+    c.anclaje_senal,
+    c.anclaje_dir3_cod,
+    c.tipo_contrato_cod,
+    c.subtipo_contrato_cod,
+    c.procedimiento_cod,
+    c.cpv_cod,
+    c.estado_cod,
+    c.resultado_cod,
+    c.es_cabecera_expediente,
+    c.presupuesto_sin_iva,
+    c.presupuesto_con_iva,
+    c.valor_estimado,
+    c.importe_adjudicacion,
+    c.num_ofertas,
+    c.adjudicatario_id,
+    c.adjudicatario_nombre,
+    c.adjudicatario_es_pyme,
+    c.fecha_adjudicacion,
+    c.fecha_formalizacion,
+    c.fecha_actualizacion,
+    c.fecha_captura
+FROM fact_contratos c
+JOIN dim_periodo p USING (periodo)
+LEFT JOIN dim_seccion_servicio ss
+    ON ss.ejercicio = c.ejercicio
+   AND ss.seccion_cod = c.seccion_cod
+   AND ss.servicio_cod = c.servicio_cod;
 
 -- "Último dato disponible": el periodo máximo cargado de cada ejercicio
 -- (el Anexo I es acumulado, así que ese mes ES la foto vigente del ejercicio).

@@ -128,12 +128,29 @@ placsp:
 bdns:
   nombre: "BDNS / SNPSAP — Sistema Nacional de Publicidad de Subvenciones"
   descripcion: >
-    Convocatorias y concesiones de subvenciones vía API REST de
-    infosubvenciones.es, con órgano concedente a nivel de dirección general.
-  url_base: "https://www.infosubvenciones.es"  # TODO: verificar endpoints de la API REST
+    Concesiones (y convocatorias) de subvenciones vía la API REST pública del
+    SNPSAP (infosubvenciones.es). VERIFICADO 2026-06-12 con llamadas reales:
+    acceso público sin clave; paginación estilo Spring (page/pageSize, hasta
+    pageSize=10000 honrado; la respuesta trae totalElements/totalPages/last);
+    filtro incremental por fechaDesde/fechaHasta (DD/MM/AAAA, inclusivo, sobre
+    la fecha de concesión) y por ámbito tipoAdministracion (C=Estado,
+    A=autonómica, L=local). IMPORTANTE: la API NO publica el código DIR3 del
+    órgano concedente — solo la jerarquía administrativa como texto
+    (nivel1/nivel2/nivel3) y, en convocatorias, un codigoInvente (INVENTE).
+    El anclaje orgánico resuelve nivel3 → DIR3 por denominación normalizada
+    (docs/bdns_estructura.md). El NIF de personas físicas llega enmascarado de
+    origen (***dddd**); las jurídicas, en claro. El aviso legal advierte de
+    posibles medidas restrictivas ante abuso del API: el extractor pagina con
+    reintentos/backoff y una pausa cortés entre páginas. Volumen: ~26,8 M de
+    concesiones totales, ~17 M estatales (dominadas por microayudas ICO/Red.es):
+    el raw NO se versiona (ver .gitignore), se regenera por ventana de fechas.
+  url_base: "https://www.infosubvenciones.es"
+  url_api_base: "https://www.infosubvenciones.es/bdnstrans/api"
+  endpoint_concesiones: "concesiones/busqueda"
+  page_size: 5000
   formato: "API REST (JSON)"
   periodicidad: "diaria"
-  perimetro: "AGE + organismos estatales (v1)"
+  perimetro: "AGE + organismos estatales (v1: ámbito C por defecto; resto etiquetado fuera_perimetro, no descartado)"
 
 boe:
   nombre: "BOE — Sumario diario (API XML)"

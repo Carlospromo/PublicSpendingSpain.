@@ -5,6 +5,7 @@ Los aún no implementados imprimen la fase en la que se implementarán.
 """
 
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import typer
@@ -65,11 +66,27 @@ def extract(
         "--paginas",
         help="Páginas ATOM del modo incremental (placsp); 1 = solo la cabecera diaria.",
     ),
+    desde: str | None = typer.Option(
+        None,
+        "--desde",
+        help="Inicio de la ventana de concesión (YYYY-MM-DD, bdns); "
+        "por defecto, 7 días antes de --hasta.",
+    ),
+    hasta: str | None = typer.Option(
+        None,
+        "--hasta",
+        help="Fin de la ventana de concesión (YYYY-MM-DD, bdns); por defecto, hoy.",
+    ),
+    ambito: str = typer.Option(
+        "C",
+        "--ambito",
+        help="Ámbito de administración (bdns): C=Estado, A=autonómica, L=local, O=otros.",
+    ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
-    if source in ("dir3", "pge_organica", "igae", "placsp"):
+    if source in ("dir3", "pge_organica", "igae", "placsp", "bdns"):
         _bootstrap_repo_root()
-        from gasto_estado.extractors import dir3, igae_mensual, pge_organica, placsp_atom
+        from gasto_estado.extractors import bdns_api, dir3, igae_mensual, pge_organica, placsp_atom
         from gasto_estado.extractors.base import SourceBlockedError
 
         try:
@@ -77,6 +94,10 @@ def extract(
                 saved = igae_mensual.extract(periodo=periodo)
             elif source == "placsp":
                 saved = placsp_atom.extract(anio=anio, paginas=paginas)
+            elif source == "bdns":
+                hasta_d = date.fromisoformat(hasta) if hasta else date.today()
+                desde_d = date.fromisoformat(desde) if desde else hasta_d - timedelta(days=7)
+                saved = bdns_api.extract(desde=desde_d, hasta=hasta_d, ambito=ambito)
             else:
                 extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
                 saved = extractor()

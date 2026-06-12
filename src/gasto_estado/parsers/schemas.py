@@ -109,6 +109,53 @@ placsp_adjudicacion_schema = pa.DataFrameSchema(
     unique=["licitacion_id", "lote_id"],
 )
 
+# ---------------------------------------------------------------------------
+# BDNS / SNPSAP — concesiones de subvenciones (API REST)
+#
+# GRANO: una fila por CONCESIÓN (el compromiso jurídico con importe); la
+# convocatoria es atributo de la fila, nunca fila propia (sumar ambas sería
+# doble conteo; el presupuestoTotal de la convocatoria no entra en este hecho).
+#
+# La API NO publica DIR3 del órgano concedente (VERIFICADO 2026-06-12): la
+# jerarquía administrativa llega como texto nivel1/nivel2/nivel3 y el anclaje
+# la resuelve después por denominación. El NIF de personas físicas llega
+# enmascarado de origen (***dddd**). TODA ausencia es nulo explícito, nunca 0.
+# ---------------------------------------------------------------------------
+
+bdns_concesion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("bdns")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        # Id numérico de plataforma de la concesión: clave estable (las
+        # correcciones republican el mismo id).
+        "concesion_id": pa.Column(str, unique=True),
+        "concesion_cod": pa.Column(str, nullable=True),  # "SB<id>"
+        "convocatoria_id": pa.Column(str, nullable=True),
+        "convocatoria_cod": pa.Column(str, nullable=True),  # código BDNS (numeroConvocatoria)
+        "convocatoria_titulo": pa.Column(str, nullable=True),
+        # Jerarquía administrativa del órgano CONCEDENTE, tal cual la publica
+        # la API (texto): ESTADO/AUTONOMICA/LOCAL, ministerio/CCAA, órgano.
+        "nivel1": pa.Column(str, nullable=True),
+        "nivel2": pa.Column(str, nullable=True),
+        "nivel3": pa.Column(str, nullable=True),
+        "codigo_invente": pa.Column(str, nullable=True),  # INVENTE, no DIR3
+        "instrumento": pa.Column(str, nullable=True),
+        "importe": pa.Column(float, nullable=True),
+        "ayuda_equivalente": pa.Column(float, nullable=True),
+        "beneficiario_id": pa.Column(str, nullable=True),  # idPersona (estable)
+        "beneficiario_nif": pa.Column(str, nullable=True),  # enmascarado si física
+        "beneficiario_nombre": pa.Column(str, nullable=True),
+        "beneficiario_tipo": pa.Column(str, pa.Check.isin(["fisica", "juridica"]), nullable=True),
+        "tiene_proyecto": pa.Column("object", nullable=True),  # bool o None
+        "url_br": pa.Column(str, nullable=True),
+        "fecha_concesion": pa.Column("object", nullable=True),  # datetime.date
+        "fecha_alta": pa.Column("object", nullable=True),
+    },
+    strict=True,
+    coerce=False,
+)
+
 # Estados oficiales de una unidad DIR3 (hoja "Catálogos de clasificación" del
 # fichero oficial): Vigente, Extinguido, Anulado, Transitorio.
 DIR3_ESTADOS = ("V", "E", "A", "T")

@@ -97,16 +97,33 @@ pge_organica:
 placsp:
   nombre: "PLACSP — Plataforma de Contratación del Sector Público (datos abiertos)"
   descripcion: >
-    Licitaciones y adjudicaciones en formato ATOM/XML CODICE. Tres datasets:
-    perfiles propios, agregación CCAA y contratos menores. ZIP por año (desde
-    2012) o por mes del año en curso. Paginación: seguir atom:link@rel="next";
-    máx. 500 entradas por fichero. Sindicación 643 = licitaciones perfil PLACSP
-    sin contratos menores.
+    Licitaciones y adjudicaciones en formato ATOM/XML CODICE (espacios de nombres
+    urn:dgpe:names:draft:codice…-2). Tres datasets; en v1 SOLO la sindicación 643
+    (licitaciones de los perfiles del contratante, SIN contratos menores), que es
+    la que ancla a la espina orgánica vía DIR3. La agregación de plataformas
+    autonómicas (sindicación 1044) queda fuera de perímetro v1 (CCAA) y los
+    contratos menores son un dataset de grano distinto: ambos se añadirán con su
+    propio fixture y tests. VERIFICADO 2026-06-12 con descargas reales:
+    el ZIP por año resuelve para 2012-2026 (incluido el año en curso); el feed
+    ATOM "cabecera" pagina hacia atrás con atom:link@rel="next" (cada fichero
+    trae como máx. 500 entradas; cabecera real observada: 338). El nombrado
+    mensual (…_YYYYMM.zip) resuelve pero devuelve un payload de >150 MB no
+    acotado al mes, así que NO se usa: el año en curso se cubre con el ZIP anual.
+    Estructura y modelo canónico documentados en docs/placsp_estructura.md.
+    NOTA raw: a diferencia de IGAE (ficheros < 1,5 MB), una captura PLACSP pesa
+    10-160 MB; el raw masivo se regenera con el extractor / git-scraping de CI y
+    NO se versiona (ver .gitignore). La muestra real reducida vive en
+    tests/fixtures/placsp_643_page*.atom.
   url_base: "https://contrataciondelsectorpublico.gob.es/wps/portal/DatosAbiertos"
-  url_pattern: null  # TODO: verificar URLs de los ZIP anuales/mensuales
-  formato: "ATOM/XML (CODICE), ZIP"
+  # Sindicación 643 (perfiles del contratante, completo sin menores).
+  # Feed cabecera (último tramo, actualización diaria) + paginación rel="next":
+  url_atom_cabecera: "https://contrataciondelestado.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom"
+  # ZIP por año (histórico desde 2012 y año en curso); <YYYY> interpolado:
+  url_zip_anual_patron: "https://contrataciondelestado.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3_{anio}.zip"
+  anio_minimo: 2012
+  formato: "ATOM/XML (CODICE 2.x), ZIP"
   periodicidad: "diaria"
-  perimetro: "Sector público estatal (v1: filtrar AGE + organismos estatales)"
+  perimetro: "Sector público estatal (v1: anclar AGE + organismos estatales; resto etiquetado y contabilizado, no descartado)"
 
 bdns:
   nombre: "BDNS / SNPSAP — Sistema Nacional de Publicidad de Subvenciones"

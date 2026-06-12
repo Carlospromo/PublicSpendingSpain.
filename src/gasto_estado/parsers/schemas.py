@@ -47,12 +47,71 @@ igae_anexo_i_schema = pa.DataFrameSchema(
     coerce=False,
 )
 
+# Códigos DIR3: letra(s) + dígitos, p. ej. "E04921901", "EA0008567".
+_DIR3_COD_REGEX = r"^[A-Z]{1,2}\d{7,8}$"
+
+# ---------------------------------------------------------------------------
+# PLACSP — adjudicaciones (sindicación 643, CODICE 2.x)
+#
+# GRANO: una fila por (expediente, lote adjudicado); los expedientes sin
+# adjudicación emiten una fila cabecera con resultado/importe nulos (ver
+# docs/placsp_estructura.md §4). `es_cabecera_expediente` marca exactamente una
+# fila por expediente: las magnitudes de licitación (presupuesto_*) solo van en
+# ella, para que sumen sin doble conteo. El importe_adjudicacion es aditivo en
+# todas las filas.
+#
+# El dato bruto es ruidoso (CLAUDE.md §9: la robustez está en la normalización
+# y el anclaje, no en el campo bruto): el órgano puede identificarse por DIR3 o
+# solo por NIF (organo_dir3_cod nulo), los códigos de estado/resultado son de
+# listas oficiales que evolucionan (no se cierran aquí a un enum), y TODA
+# ausencia es nulo explícito, nunca cero.
+# ---------------------------------------------------------------------------
+
+placsp_adjudicacion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("placsp")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        # Id numérico de plataforma: la clave estable de la licitación
+        # (VERIFICADO; el expediente_id se repite entre órganos distintos).
+        "licitacion_id": pa.Column(str),
+        "expediente_id": pa.Column(str, nullable=True),
+        "entry_id": pa.Column(str),
+        "es_cabecera_expediente": pa.Column(bool),
+        "lote_id": pa.Column(str),
+        "organo_id": pa.Column(str, nullable=True),
+        "organo_id_esquema": pa.Column(str, nullable=True),  # DIR3 | NIF | otros
+        "organo_dir3_cod": pa.Column(str, pa.Check.str_matches(_DIR3_COD_REGEX), nullable=True),
+        "organo_denominacion": pa.Column(str, nullable=True),
+        "organo_tipo_cod": pa.Column(str, nullable=True),
+        "tipo_contrato_cod": pa.Column(str, nullable=True),
+        "subtipo_contrato_cod": pa.Column(str, nullable=True),
+        "procedimiento_cod": pa.Column(str, nullable=True),
+        "cpv_cod": pa.Column(str, nullable=True),
+        "estado_cod": pa.Column(str, nullable=True),  # PUB|EV|ADJ|RES|ANUL|PRE|BAJA…
+        "resultado_cod": pa.Column(str, nullable=True),  # 8/9=adjudicado, 3=desierto…
+        "presupuesto_sin_iva": pa.Column(float, nullable=True),
+        "presupuesto_con_iva": pa.Column(float, nullable=True),
+        "valor_estimado": pa.Column(float, nullable=True),
+        "importe_adjudicacion": pa.Column(float, nullable=True),
+        "num_ofertas": pa.Column(str, nullable=True),
+        "adjudicatario_id": pa.Column(str, nullable=True),
+        "adjudicatario_id_esquema": pa.Column(str, nullable=True),
+        "adjudicatario_nombre": pa.Column(str, nullable=True),
+        "adjudicatario_es_pyme": pa.Column("object", nullable=True),  # bool o None
+        "fecha_adjudicacion": pa.Column("object", nullable=True),  # datetime.date
+        "fecha_formalizacion": pa.Column("object", nullable=True),
+        "fecha_actualizacion": pa.Column("object", nullable=True),
+    },
+    strict=True,
+    coerce=False,
+    # Clave natural del hecho: la foto vigente de cada lote de la licitación.
+    unique=["licitacion_id", "lote_id"],
+)
+
 # Estados oficiales de una unidad DIR3 (hoja "Catálogos de clasificación" del
 # fichero oficial): Vigente, Extinguido, Anulado, Transitorio.
 DIR3_ESTADOS = ("V", "E", "A", "T")
-
-# Códigos DIR3: letra(s) + dígitos, p. ej. "E04921901", "EA0008567".
-_DIR3_COD_REGEX = r"^[A-Z]{1,2}\d{7,8}$"
 
 dim_seccion_servicio_schema = pa.DataFrameSchema(
     {

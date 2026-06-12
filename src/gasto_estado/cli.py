@@ -55,16 +55,28 @@ def extract(
         "--periodo",
         help="Periodo mensual explícito (YYYY-MM); solo para fuentes mensuales (igae).",
     ),
+    anio: int | None = typer.Option(
+        None,
+        "--anio",
+        help="Año del ZIP anual (placsp): volcado histórico completo de ese ejercicio.",
+    ),
+    paginas: int = typer.Option(
+        1,
+        "--paginas",
+        help="Páginas ATOM del modo incremental (placsp); 1 = solo la cabecera diaria.",
+    ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
-    if source in ("dir3", "pge_organica", "igae"):
+    if source in ("dir3", "pge_organica", "igae", "placsp"):
         _bootstrap_repo_root()
-        from gasto_estado.extractors import dir3, igae_mensual, pge_organica
+        from gasto_estado.extractors import dir3, igae_mensual, pge_organica, placsp_atom
         from gasto_estado.extractors.base import SourceBlockedError
 
         try:
             if source == "igae":
                 saved = igae_mensual.extract(periodo=periodo)
+            elif source == "placsp":
+                saved = placsp_atom.extract(anio=anio, paginas=paginas)
             else:
                 extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
                 saved = extractor()

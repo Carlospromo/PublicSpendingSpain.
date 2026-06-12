@@ -36,6 +36,8 @@ dev = [
     "pandas-stubs==3.0.3.260530",
     "types-openpyxl==3.1.5.20260518",
     "types-xlrd==2.0.0.20260518",
+    # lxml-stubs: tipado de lxml para los parsers ATOM/CODICE (PLACSP)
+    "lxml-stubs==0.5.1",
 ]
 
 [build-system]

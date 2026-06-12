@@ -88,11 +88,12 @@ def _run_load(operacion: str) -> None:
     from config import settings
 
     from gasto_estado.db import load as db_load
+    from gasto_estado.quality.checks import CoherenceError
 
     try:
         runner = {"build": db_load.build, "update": db_load.update}[operacion]
         stats = runner(settings.WAREHOUSE_PATH, settings.RAW_DIR)
-    except db_load.OrphanOrganicError as exc:
+    except (db_load.OrphanOrganicError, CoherenceError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     for periodo, filas in stats.items():
@@ -115,9 +116,39 @@ def update() -> None:
 
 
 @app.command()
-def check() -> None:
-    """Ejecuta las validaciones de coherencia contable (CLAUDE.md §7)."""
-    typer.echo("check: no implementado — Fase 3")
+def check(
+    periodo: str | None = typer.Option(
+        None, "--periodo", help="Periodo (YYYY-MM) a validar; por defecto, todos los cargados."
+    ),
+    json_out: str | None = typer.Option(
+        None, "--json", help="Ruta donde volcar además el informe estructurado (JSON)."
+    ),
+) -> None:
+    """Ejecuta las validaciones de coherencia contable (CLAUDE.md §7).
+
+    Código de salida 1 si alguna regla está en FAIL (para CI, Fase 7).
+    """
+    _bootstrap_repo_root()
+    import duckdb
+    from config import settings
+
+    from gasto_estado.quality import checks
+
+    if not settings.WAREHOUSE_PATH.exists():
+        typer.echo("error: no existe el warehouse; ejecuta 'gasto-estado build'.", err=True)
+        raise typer.Exit(code=1)
+    with duckdb.connect(str(settings.WAREHOUSE_PATH), read_only=True) as con:
+        try:
+            resultados = checks.run_checks(con, [periodo] if periodo else None)
+        except ValueError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    checks.render_consola(resultados, typer.echo)
+    if json_out is not None:
+        Path(json_out).write_text(checks.a_json(resultados), encoding="utf-8")
+        typer.echo(f"check: informe JSON en {json_out}")
+    if any(r.estado == checks.FAIL for r in resultados):
+        raise typer.Exit(code=1)
 
 
 @app.command()

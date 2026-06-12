@@ -186,7 +186,18 @@ def test_recargar_el_mismo_lote_es_idempotente(con) -> None:
 
 def test_recarga_reemplaza_la_particion_sin_tocar_otras(con) -> None:
     load_periodo(con, lote({}, {"programa_cod": "912M", "orn": 10.0}))
-    load_periodo(con, lote({"periodo": "2026-04", "orn": 80.0}))
+    # Coherente con R8: el inicial agregado del servicio (200) no cambia entre meses.
+    load_periodo(
+        con,
+        lote(
+            {
+                "periodo": "2026-04",
+                "credito_inicial": 200.0,
+                "credito_definitivo": 240.0,
+                "orn": 80.0,
+            }
+        ),
+    )
     # Revisión de 2026-03: corrige una aplicación y retira la otra.
     load_periodo(con, lote({"orn": 65.0}))
     facts = _facts(con)

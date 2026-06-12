@@ -2,8 +2,9 @@
 
 > Decisiones de modelado de la capa analítica (DuckDB) y semántica de carga
 > idempotente. Las validaciones de coherencia contable globales (CLAUDE.md §7:
-> Σ servicios = sección, ORN ≤ definitivo agregado, etc.) **no** se implementan
-> aquí: corresponden a la Fase 8. Esta fase fija el **modelo** y la **carga**.
+> Σ servicios = sección, ORN ≤ definitivo agregado, etc.) están documentadas en
+> `docs/validaciones.md` e implementadas en `quality/checks.py`; se ejecutan
+> dentro de la transacción de carga y bajo demanda con `gasto-estado check`.
 
 El warehouse es autocontenido y reproducible (CLAUDE.md §2, §6): `gasto-estado
 build` lo reconstruye desde cero a partir del `raw/` inmutable + los seeds

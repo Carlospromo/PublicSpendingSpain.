@@ -18,6 +18,7 @@ import pandas as pd
 
 from gasto_estado.parsers.igae import parse_periodo
 from gasto_estado.parsers.schemas import igae_anexo_i_schema
+from gasto_estado.quality.checks import FAIL, CoherenceError, run_checks
 
 MODELO_SQL = Path(__file__).with_name("modelo.sql")
 SEEDS_DIR = Path(__file__).with_name("seeds")
@@ -236,8 +237,16 @@ def _refresh_economica_denominaciones(con: duckdb.DuckDBPyConnection) -> None:
 def load_periodo(con: duckdb.DuckDBPyConnection, detalle: pd.DataFrame) -> int:
     """Carga un lote canónico del Anexo I: upsert por partición (periodo, fuente).
 
-    Valida el contrato de entrada, puebla/deriva dimensiones y reemplaza la
-    partición del hecho. Devuelve el nº de filas cargadas.
+    Valida el contrato de entrada, puebla/deriva dimensiones, reemplaza la
+    partición del hecho y ejecuta las validaciones contables (CLAUDE.md §7)
+    sobre el periodo. Devuelve el nº de filas cargadas.
+
+    Fail loud por TRANSACCIÓN (no cuarentena): dimensiones, partición,
+    denominaciones derivadas y checks comparten una única transacción; si los
+    checks marcan FAIL se hace ROLLBACK y se lanza ``CoherenceError``. Así el
+    warehouse queda exactamente en el último estado íntegro — en particular,
+    la recarga fallida de una revisión IGAE conserva la versión buena anterior
+    de la partición, cosa que una cuarentena post-commit no garantizaría.
     """
     detalle = igae_anexo_i_schema.validate(detalle)
 
@@ -251,11 +260,6 @@ def load_periodo(con: duckdb.DuckDBPyConnection, detalle: pd.DataFrame) -> int:
     ejercicio = int(periodo[:4])
     cobertura = COBERTURA_FUENTE[fuente]
 
-    _upsert_dim_periodo(con, periodo)
-    _ensure_seccion_servicio(con, detalle, ejercicio)
-    _ensure_programas(con, detalle)
-    _ensure_economicas(con, detalle)
-
     hechos = detalle.assign(
         ejercicio=ejercicio,
         provincia_cod=detalle["provincia_cod"].fillna(PROVINCIA_NO_TERRITORIALIZADO),
@@ -263,6 +267,10 @@ def load_periodo(con: duckdb.DuckDBPyConnection, detalle: pd.DataFrame) -> int:
     )
     con.execute("BEGIN")
     try:
+        _upsert_dim_periodo(con, periodo)
+        _ensure_seccion_servicio(con, detalle, ejercicio)
+        _ensure_programas(con, detalle)
+        _ensure_economicas(con, detalle)
         con.execute(
             "DELETE FROM fact_ejecucion WHERE periodo = ? AND fuente_cod = ?",
             [periodo, fuente],
@@ -284,12 +292,14 @@ def load_periodo(con: duckdb.DuckDBPyConnection, detalle: pd.DataFrame) -> int:
             """
         )
         con.unregister("_hechos")
+        _refresh_economica_denominaciones(con)
+        fallos = [r for r in run_checks(con, [periodo]) if r.estado == FAIL]
+        if fallos:
+            raise CoherenceError(periodo, fallos)
         con.execute("COMMIT")
     except Exception:
         con.execute("ROLLBACK")
         raise
-
-    _refresh_economica_denominaciones(con)
     return len(hechos)
 
 

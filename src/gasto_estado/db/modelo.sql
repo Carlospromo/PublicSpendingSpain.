@@ -9,10 +9,10 @@
 --   * Ancla orgánica del hecho: dim_seccion_servicio por (ejercicio, seccion,
 --     servicio). dim_organica (DIR3, SCD2) es referencia, no FK del hecho,
 --     mientras su crosswalk presupuesto<->DIR3 siga pendiente.
---   * Los hechos de la Fase 4 (fact_contratos, fact_subvenciones,
---     fact_acuerdos_cdm) NO se crean aquí: su esquema se fijará tras
---     inspeccionar las fuentes reales (CLAUDE.md §9). dim_fuente ya reserva
---     sus códigos y velocidades.
+--   * Hechos de la Fase 4 ya incorporados (esquema fijado tras inspeccionar
+--     la fuente real, CLAUDE.md §9): fact_contratos (PLACSP) y
+--     fact_subvenciones (BDNS). Pendientes: los hechos de BOE y Consejo de
+--     Ministros; dim_fuente ya reserva sus códigos y velocidades.
 --
 -- Idempotente: CREATE ... IF NOT EXISTS en todo; ejecutable sobre un fichero
 -- nuevo (build) o existente (update).
@@ -266,6 +266,61 @@ CREATE INDEX IF NOT EXISTS idx_fact_contratos_adjudicatario
 CREATE INDEX IF NOT EXISTS idx_fact_contratos_organo
     ON fact_contratos (organo_dir3_cod);
 
+-- Concesiones de subvenciones BDNS/SNPSAP (velocidad "compromisos jurídicos",
+-- Fase 4). Esquema fijado tras verificar la API real (docs/bdns_estructura.md).
+--
+--  * GRANO = concesión (donde vive el importe comprometido); la convocatoria
+--    es ATRIBUTO (id/código/título), nunca fila: sumar convocatorias y
+--    concesiones a la vez sería doble conteo. El presupuestoTotal de la
+--    convocatoria NO entra en este hecho.
+--  * Clave natural = concesion_id (id numérico de plataforma; las correcciones
+--    republican el mismo id → el upsert pisa la foto anterior).
+--  * El órgano concedente llega como TEXTO (nivel1/2/3, sin DIR3): el anclaje
+--    resuelve nivel3 → DIR3 por denominación y de ahí a (sección, servicio).
+--    Mismas etiquetas que fact_contratos; "sin anclar" se CONSERVA y cuenta.
+--  * Las subvenciones NO tienen que cuadrar con la ORN (magnitudes distintas,
+--    no subconjuntos): quedan fuera de los checks contables de la Fase 3.
+CREATE TABLE IF NOT EXISTS fact_subvenciones (
+    concesion_id             VARCHAR NOT NULL,
+    fuente_cod               VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo                  VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio                INTEGER NOT NULL,
+    concesion_cod            VARCHAR,
+    convocatoria_id          VARCHAR,
+    convocatoria_cod         VARCHAR,
+    convocatoria_titulo      VARCHAR,
+    nivel1                   VARCHAR,
+    nivel2                   VARCHAR,
+    nivel3                   VARCHAR,
+    codigo_invente           VARCHAR,
+    seccion_cod              VARCHAR,
+    servicio_cod             VARCHAR,
+    anclaje_dir3_cod         VARCHAR,
+    anclaje_tipo             VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('servicio', 'organica_sin_servicio', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal            VARCHAR NOT NULL,
+    instrumento              VARCHAR,
+    importe                  DOUBLE,
+    ayuda_equivalente        DOUBLE,
+    beneficiario_id          VARCHAR,
+    beneficiario_nif         VARCHAR,  -- enmascarado de origen si persona física
+    beneficiario_nombre      VARCHAR,
+    beneficiario_tipo        VARCHAR CHECK (beneficiario_tipo IN ('fisica', 'juridica')),
+    tiene_proyecto           BOOLEAN,
+    url_br                   VARCHAR,
+    fecha_concesion          DATE,
+    fecha_alta               DATE,
+    fecha_captura            DATE NOT NULL,
+    PRIMARY KEY (concesion_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_organica
+    ON fact_subvenciones (ejercicio, seccion_cod, servicio_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_beneficiario
+    ON fact_subvenciones (beneficiario_id);
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_convocatoria
+    ON fact_subvenciones (convocatoria_id);
+
 -- ----------------------------------------------------------------------------
 -- Vistas de exposición
 -- ----------------------------------------------------------------------------
@@ -359,6 +414,45 @@ LEFT JOIN dim_seccion_servicio ss
     ON ss.ejercicio = c.ejercicio
    AND ss.seccion_cod = c.seccion_cod
    AND ss.servicio_cod = c.servicio_cod;
+
+-- Concesiones desnormalizadas con su ancla orgánica (LEFT JOIN: las no
+-- ancladas se exponen igualmente — "sin anclar contabilizado es información").
+CREATE OR REPLACE VIEW v_subvenciones AS
+SELECT
+    s.concesion_id,
+    s.concesion_cod,
+    s.convocatoria_id,
+    s.convocatoria_cod,
+    s.convocatoria_titulo,
+    s.periodo,
+    s.ejercicio,
+    p.mes,
+    s.nivel1,
+    s.nivel2,
+    s.nivel3,
+    s.seccion_cod,
+    ss.seccion_denominacion,
+    s.servicio_cod,
+    ss.servicio_denominacion,
+    s.anclaje_tipo,
+    s.anclaje_senal,
+    s.anclaje_dir3_cod,
+    s.instrumento,
+    s.importe,
+    s.ayuda_equivalente,
+    s.beneficiario_id,
+    s.beneficiario_nif,
+    s.beneficiario_nombre,
+    s.beneficiario_tipo,
+    s.fecha_concesion,
+    s.fecha_alta,
+    s.fecha_captura
+FROM fact_subvenciones s
+JOIN dim_periodo p USING (periodo)
+LEFT JOIN dim_seccion_servicio ss
+    ON ss.ejercicio = s.ejercicio
+   AND ss.seccion_cod = s.seccion_cod
+   AND ss.servicio_cod = s.servicio_cod;
 
 -- "Último dato disponible": el periodo máximo cargado de cada ejercicio
 -- (el Anexo I es acumulado, así que ese mes ES la foto vigente del ejercicio).

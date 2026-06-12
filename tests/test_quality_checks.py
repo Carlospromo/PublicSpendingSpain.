@@ -307,7 +307,10 @@ def test_los_periodos_reales_pasan_en_verde(tmp_path: Path) -> None:
     assert contadores[FAIL] == 0
     assert contadores[PASS] > 0
     pendientes = [r for r in resultados if r.estado == SKIPPED and r.regla == "R5"]
-    assert len(pendientes) == len(stats)
+    # stats mezcla fuentes desde la Fase 4 ("YYYY-MM" para IGAE,
+    # "fuente@captura" para PLACSP/BDNS); R5 solo aplica a periodos IGAE.
+    periodos_igae = [clave for clave in stats if "@" not in clave]
+    assert len(pendientes) == len(periodos_igae)
     assert all("Fase 4" in r.detalle for r in pendientes)
     # 2026 tiene dos periodos: R8 debe haberse contrastado de verdad.
     r8_2026_04 = next(r for r in resultados if r.regla == "R8" and r.periodo == "2026-04")

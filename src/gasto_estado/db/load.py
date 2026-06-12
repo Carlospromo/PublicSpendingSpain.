@@ -16,11 +16,17 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+from gasto_estado.parsers import bdns as bdns_parser
 from gasto_estado.parsers.igae import parse_periodo
 from gasto_estado.parsers.placsp import discover_capturas, parse_capture_dir
 from gasto_estado.parsers.schemas import igae_anexo_i_schema
 from gasto_estado.quality.checks import FAIL, CoherenceError, run_checks
-from gasto_estado.transform.placsp_anclaje import ANCLAJE_COLUMNS, anclar_contratos
+from gasto_estado.transform.anclaje_organico import (
+    ANCLAJE_COLUMNS,
+    anclar_concesiones,
+    anclar_contratos,
+    load_overrides_organo,
+)
 
 MODELO_SQL = Path(__file__).with_name("modelo.sql")
 SEEDS_DIR = Path(__file__).with_name("seeds")
@@ -427,18 +433,112 @@ def _cargar_raw_placsp(
     return stats
 
 
-def _capturas_pendientes(con: duckdb.DuckDBPyConnection, raw_dir: Path) -> list[str]:
-    """Capturas raw posteriores a la última cargada (nombre de directorio ISO).
+def _capturas_pendientes(
+    con: duckdb.DuckDBPyConnection, tabla: str, capturas: list[str]
+) -> list[str]:
+    """Capturas raw posteriores a la última cargada en ``tabla`` (dir ISO).
 
-    fecha_captura solo se sobreescribe en las licitaciones republicadas, así
-    que max(fecha_captura) marca la última captura aplicada al warehouse.
+    fecha_captura solo se sobreescribe en las filas republicadas, así que
+    max(fecha_captura) marca la última captura aplicada al warehouse.
     """
-    fila = con.execute("SELECT max(fecha_captura) FROM fact_contratos").fetchone()
+    fila = con.execute(f"SELECT max(fecha_captura) FROM {tabla}").fetchone()  # noqa: S608
     ultima = fila[0] if fila is not None else None
-    capturas = discover_capturas(raw_dir)
     if ultima is None:
         return capturas
     return [c for c in capturas if c > ultima.isoformat()]
+
+
+# Columnas (y orden) del INSERT en fact_subvenciones: canónicas BDNS + anclaje.
+_SUBVENCIONES_INSERT_COLS = [
+    "concesion_id",
+    "fuente",
+    "periodo",
+    "ejercicio",
+    "concesion_cod",
+    "convocatoria_id",
+    "convocatoria_cod",
+    "convocatoria_titulo",
+    "nivel1",
+    "nivel2",
+    "nivel3",
+    "codigo_invente",
+    "seccion_cod",
+    "servicio_cod",
+    "anclaje_dir3_cod",
+    "anclaje_tipo",
+    "anclaje_senal",
+    "instrumento",
+    "importe",
+    "ayuda_equivalente",
+    "beneficiario_id",
+    "beneficiario_nif",
+    "beneficiario_nombre",
+    "beneficiario_tipo",
+    "tiene_proyecto",
+    "url_br",
+    "fecha_concesion",
+    "fecha_alta",
+    "fecha_captura",
+]
+
+
+def load_concesiones(con: duckdb.DuckDBPyConnection, anclado: pd.DataFrame) -> int:
+    """Carga un lote BDNS anclado: upsert "última foto" por concesión.
+
+    ``anclado`` = salida de ``parse_captura`` (ya validada contra
+    ``bdns_concesion_schema``) tras ``anclar_concesiones``. La BDNS corrige y
+    reinserta concesiones con el mismo id: se borra la fila previa de cada
+    concesión presente en el lote y se reinserta su foto nueva — recargar el
+    mismo raw es idempotente (CLAUDE.md §2).
+
+    Sin checks contables: las subvenciones NO tienen que cuadrar con la ORN
+    (magnitudes distintas, no subconjuntos); el contrato de entrada es el
+    esquema pandera + el anclaje etiquetado (nunca NULL).
+    """
+    faltan = [c for c in ANCLAJE_COLUMNS if c not in anclado.columns]
+    if faltan:
+        raise ValueError(
+            f"Lote BDNS sin anclar (faltan {faltan}); pasa por anclar_concesiones antes."
+        )
+    if anclado.empty:
+        return 0
+    hechos = anclado.assign(ejercicio=anclado["periodo"].str.slice(0, 4).astype(int))
+
+    con.execute("BEGIN")
+    try:
+        for periodo in sorted(hechos["periodo"].unique()):
+            _upsert_dim_periodo(con, str(periodo))
+        con.register("_concesiones", hechos)
+        con.execute(
+            """
+            DELETE FROM fact_subvenciones
+            WHERE concesion_id IN (SELECT concesion_id FROM _concesiones)
+            """
+        )
+        cols = ", ".join(_SUBVENCIONES_INSERT_COLS)
+        con.execute(f"INSERT INTO fact_subvenciones SELECT {cols} FROM _concesiones")
+        con.unregister("_concesiones")
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+    return len(hechos)
+
+
+def _cargar_raw_bdns(
+    con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
+) -> dict[str, int]:
+    """Parsea+ancla+carga cada captura BDNS, ascendente (la más reciente gana)."""
+    if not capturas:
+        return {}
+    dim_organica, crosswalk = _leer_seeds_anclaje()
+    overrides = load_overrides_organo(SEEDS_DIR / "crosswalk_organo_bdns_dir3.csv")
+    stats: dict[str, int] = {}
+    for captura in capturas:
+        concesiones = bdns_parser.parse_capture_dir(raw_dir / "bdns" / captura)
+        anclado = anclar_concesiones(concesiones, dim_organica, crosswalk, overrides)
+        stats[f"bdns@{captura}"] = load_concesiones(con, anclado)
+    return stats
 
 
 def _cargar_raw(
@@ -465,6 +565,7 @@ def build(db_path: Path, raw_dir: Path) -> dict[str, int]:
         load_seeds(con)
         stats = _cargar_raw(con, raw_dir, discover_periodos(raw_dir))
         stats.update(_cargar_raw_placsp(con, raw_dir, discover_capturas(raw_dir)))
+        stats.update(_cargar_raw_bdns(con, raw_dir, bdns_parser.discover_capturas(raw_dir)))
         return stats
 
 
@@ -487,5 +588,10 @@ def update(db_path: Path, raw_dir: Path) -> dict[str, int]:
         }
         pendientes = [p for p in discover_periodos(raw_dir) if p not in cargados]
         stats = _cargar_raw(con, raw_dir, pendientes)
-        stats.update(_cargar_raw_placsp(con, raw_dir, _capturas_pendientes(con, raw_dir)))
+        placsp_pendientes = _capturas_pendientes(con, "fact_contratos", discover_capturas(raw_dir))
+        stats.update(_cargar_raw_placsp(con, raw_dir, placsp_pendientes))
+        bdns_pendientes = _capturas_pendientes(
+            con, "fact_subvenciones", bdns_parser.discover_capturas(raw_dir)
+        )
+        stats.update(_cargar_raw_bdns(con, raw_dir, bdns_pendientes))
         return stats

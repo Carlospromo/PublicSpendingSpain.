@@ -100,7 +100,7 @@ def test_r4_derivada_pass_y_explicita_skipped(con) -> None:
     assert "+20.00 €" in next(r.detalle for r in r4 if r.estado == PASS)  # 120 − 100
     skipped = next(r for r in r4 if r.estado == SKIPPED)
     assert "modificaciones explícitas" in skipped.detalle
-    assert "Fase 4" in skipped.detalle
+    assert "Cuadros/Anexo II" in skipped.detalle
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ def test_r5_skipped_con_motivo_y_nunca_pass(con) -> None:
     load_periodo(con, lote())
     (r5,) = _por_regla(run_checks(con, ["2026-03"]), "R5")
     assert r5.estado == SKIPPED
-    assert "pagos no disponible hasta la Fase 4" in r5.detalle
+    assert "pagos no disponible en el Anexo I" in r5.detalle
 
 
 def test_r5_se_activa_cuando_una_fuente_cubre_pagos(con) -> None:
@@ -311,7 +311,7 @@ def test_los_periodos_reales_pasan_en_verde(tmp_path: Path) -> None:
     # "fuente@captura" para PLACSP/BDNS); R5 solo aplica a periodos IGAE.
     periodos_igae = [clave for clave in stats if "@" not in clave]
     assert len(pendientes) == len(periodos_igae)
-    assert all("Fase 4" in r.detalle for r in pendientes)
+    assert all("Cuadros/Anexo II" in r.detalle for r in pendientes)
     # 2026 tiene dos periodos: R8 debe haberse contrastado de verdad.
     r8_2026_04 = next(r for r in resultados if r.regla == "R8" and r.periodo == "2026-04")
     assert r8_2026_04.estado == PASS

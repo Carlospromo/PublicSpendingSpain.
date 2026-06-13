@@ -58,7 +58,7 @@ def test_dim_organica_estructura(unidades: pd.DataFrame) -> None:
     dim = build_dim_organica(unidades, capture_date=CAPTURE)
     assert list(dim.columns) == DIM_COLUMNS
     assert len(dim) == FIXTURE_ROWS
-    # Enganche presupuestario pendiente del Prompt 3: columnas a null.
+    # Enganche presupuestario null por diseño: el crosswalk se aplica al anclar.
     assert dim["seccion_cod"].isna().all()
     assert dim["servicio_cod"].isna().all()
 

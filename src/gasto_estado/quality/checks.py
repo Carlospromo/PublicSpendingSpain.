@@ -59,11 +59,16 @@ MAGNITUDES = (
     "orn",
     "pagos",
 )
+# Estas magnitudes no las publica el Anexo I; llegarán de IGAE Cuadros/Anexo II
+# (reservados en dim_fuente como igae_cuadros/igae_anexo_ii, aún sin incorporar).
 MOTIVO_PENDIENTE = {
-    "pagos": "magnitud pagos no disponible hasta la Fase 4 (Cuadros/Anexo II)",
-    "comprometido": "magnitud comprometido no disponible hasta la Fase 4 (Cuadros/Anexo II)",
+    "pagos": "magnitud pagos no disponible en el Anexo I (requiere IGAE Cuadros/Anexo II)",
+    "comprometido": (
+        "magnitud comprometido no disponible en el Anexo I (requiere IGAE Cuadros/Anexo II)"
+    ),
     "modificaciones": (
-        "el Anexo I no publica modificaciones explícitas; magnitud no disponible hasta la Fase 4"
+        "el Anexo I no publica modificaciones explícitas; magnitud no disponible "
+        "en esta fuente (requiere IGAE Cuadros/Anexo II)"
     ),
 }
 

@@ -37,9 +37,11 @@ CREATE TABLE IF NOT EXISTS dim_fuente (
 INSERT OR IGNORE INTO dim_fuente VALUES
     ('igae_anexo_i',  'IGAE — Ejecución AGE, Anexo I (orgánica/programa/económica)',
      'contable', 'mensual', 3),
-    -- Reservas de la Fase 4 (capa de alta frecuencia):
+    -- Fuentes contables RESERVADAS (códigos fijados, aún sin incorporar):
+    -- aportarán comprometido/pagos a fact_ejecucion. NO son alta frecuencia.
     ('igae_anexo_ii', 'IGAE — Ejecución AGE, Anexo II', 'contable', 'mensual', 4),
     ('igae_cuadros',  'IGAE — Ejecución AGE, Cuadros',  'contable', 'mensual', 4),
+    -- Capa de alta frecuencia (Fase 4):
     ('placsp',        'Plataforma de Contratación del Sector Público (CODICE)',
      'compromisos_juridicos', 'diaria', 4),
     ('bdns',          'Base de Datos Nacional de Subvenciones (SNPSAP)',

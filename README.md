@@ -46,8 +46,14 @@ uv run pytest                                          # tests + regresión de p
 uv run ruff check . && uv run mypy src/                # calidad
 ```
 
-> **Estado actual: Fase 0 (andamiaje).** Los comandos del CLI son stubs y aún no
-> implementan lógica de negocio; cada uno indica la fase en la que se implementará.
+> **Estado actual: Fases 0–4 completas.** Las tres velocidades de datos están
+> operativas (contable IGAE; compromisos PLACSP+BDNS; decisiones políticas
+> BOE+Consejo de Ministros) sobre la espina orgánica común, con carga idempotente
+> y validaciones contables. `extract`, `build`, `update` y `check` son
+> funcionales; `api` (Fase 6) sigue siendo un stub. El detalle de cobertura,
+> profundidad de anclaje y limitaciones por fuente está en
+> [`docs/cobertura_fuentes.md`](docs/cobertura_fuentes.md); el estado por fase, en
+> [`CLAUDE.md`](CLAUDE.md) §10.
 
 ## Estructura del repositorio
 

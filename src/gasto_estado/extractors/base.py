@@ -37,6 +37,13 @@ DEFAULT_HEADERS: dict[str, str] = {
 
 # Firma de los ficheros OOXML (xlsx/zip): "PK\x03\x04".
 XLSX_MAGIC = b"PK\x03\x04"
+# Firma de un ZIP cualquiera (mismo magic que OOXML; alias semántico para las
+# fuentes que entregan .zip "de verdad", p. ej. los volcados anuales de PLACSP).
+ZIP_MAGIC = b"PK\x03\x04"
+# Firma de un documento XML/ATOM (declaración "<?xml"). PLACSP sirve páginas de
+# error como HTML ("<!DOCTYPE"/"<html"), que NO empieza por esta firma: sirve de
+# guardia *fail loud* contra el soft-200 del portal.
+XML_MAGIC = b"<?xm"
 
 DEFAULT_TIMEOUT = 60.0
 

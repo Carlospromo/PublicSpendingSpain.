@@ -47,12 +47,201 @@ igae_anexo_i_schema = pa.DataFrameSchema(
     coerce=False,
 )
 
+# Códigos DIR3: letra(s) + dígitos, p. ej. "E04921901", "EA0008567".
+_DIR3_COD_REGEX = r"^[A-Z]{1,2}\d{7,8}$"
+
+# ---------------------------------------------------------------------------
+# PLACSP — adjudicaciones (sindicación 643, CODICE 2.x)
+#
+# GRANO: una fila por (expediente, lote adjudicado); los expedientes sin
+# adjudicación emiten una fila cabecera con resultado/importe nulos (ver
+# docs/placsp_estructura.md §4). `es_cabecera_expediente` marca exactamente una
+# fila por expediente: las magnitudes de licitación (presupuesto_*) solo van en
+# ella, para que sumen sin doble conteo. El importe_adjudicacion es aditivo en
+# todas las filas.
+#
+# El dato bruto es ruidoso (CLAUDE.md §9: la robustez está en la normalización
+# y el anclaje, no en el campo bruto): el órgano puede identificarse por DIR3 o
+# solo por NIF (organo_dir3_cod nulo), los códigos de estado/resultado son de
+# listas oficiales que evolucionan (no se cierran aquí a un enum), y TODA
+# ausencia es nulo explícito, nunca cero.
+# ---------------------------------------------------------------------------
+
+placsp_adjudicacion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("placsp")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        # Id numérico de plataforma: la clave estable de la licitación
+        # (VERIFICADO; el expediente_id se repite entre órganos distintos).
+        "licitacion_id": pa.Column(str),
+        "expediente_id": pa.Column(str, nullable=True),
+        "entry_id": pa.Column(str),
+        "es_cabecera_expediente": pa.Column(bool),
+        "lote_id": pa.Column(str),
+        "organo_id": pa.Column(str, nullable=True),
+        "organo_id_esquema": pa.Column(str, nullable=True),  # DIR3 | NIF | otros
+        "organo_dir3_cod": pa.Column(str, pa.Check.str_matches(_DIR3_COD_REGEX), nullable=True),
+        "organo_denominacion": pa.Column(str, nullable=True),
+        "organo_tipo_cod": pa.Column(str, nullable=True),
+        "tipo_contrato_cod": pa.Column(str, nullable=True),
+        "subtipo_contrato_cod": pa.Column(str, nullable=True),
+        "procedimiento_cod": pa.Column(str, nullable=True),
+        "cpv_cod": pa.Column(str, nullable=True),
+        "estado_cod": pa.Column(str, nullable=True),  # PUB|EV|ADJ|RES|ANUL|PRE|BAJA…
+        "resultado_cod": pa.Column(str, nullable=True),  # 8/9=adjudicado, 3=desierto…
+        "presupuesto_sin_iva": pa.Column(float, nullable=True),
+        "presupuesto_con_iva": pa.Column(float, nullable=True),
+        "valor_estimado": pa.Column(float, nullable=True),
+        "importe_adjudicacion": pa.Column(float, nullable=True),
+        "num_ofertas": pa.Column(str, nullable=True),
+        "adjudicatario_id": pa.Column(str, nullable=True),
+        "adjudicatario_id_esquema": pa.Column(str, nullable=True),
+        "adjudicatario_nombre": pa.Column(str, nullable=True),
+        "adjudicatario_es_pyme": pa.Column("object", nullable=True),  # bool o None
+        "fecha_adjudicacion": pa.Column("object", nullable=True),  # datetime.date
+        "fecha_formalizacion": pa.Column("object", nullable=True),
+        "fecha_actualizacion": pa.Column("object", nullable=True),
+    },
+    strict=True,
+    coerce=False,
+    # Clave natural del hecho: la foto vigente de cada lote de la licitación.
+    unique=["licitacion_id", "lote_id"],
+)
+
+# ---------------------------------------------------------------------------
+# BDNS / SNPSAP — concesiones de subvenciones (API REST)
+#
+# GRANO: una fila por CONCESIÓN (el compromiso jurídico con importe); la
+# convocatoria es atributo de la fila, nunca fila propia (sumar ambas sería
+# doble conteo; el presupuestoTotal de la convocatoria no entra en este hecho).
+#
+# La API NO publica DIR3 del órgano concedente (VERIFICADO 2026-06-12): la
+# jerarquía administrativa llega como texto nivel1/nivel2/nivel3 y el anclaje
+# la resuelve después por denominación. El NIF de personas físicas llega
+# enmascarado de origen (***dddd**). TODA ausencia es nulo explícito, nunca 0.
+# ---------------------------------------------------------------------------
+
+bdns_concesion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("bdns")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        # Id numérico de plataforma de la concesión: clave estable (las
+        # correcciones republican el mismo id).
+        "concesion_id": pa.Column(str, unique=True),
+        "concesion_cod": pa.Column(str, nullable=True),  # "SB<id>"
+        "convocatoria_id": pa.Column(str, nullable=True),
+        "convocatoria_cod": pa.Column(str, nullable=True),  # código BDNS (numeroConvocatoria)
+        "convocatoria_titulo": pa.Column(str, nullable=True),
+        # Jerarquía administrativa del órgano CONCEDENTE, tal cual la publica
+        # la API (texto): ESTADO/AUTONOMICA/LOCAL, ministerio/CCAA, órgano.
+        "nivel1": pa.Column(str, nullable=True),
+        "nivel2": pa.Column(str, nullable=True),
+        "nivel3": pa.Column(str, nullable=True),
+        "codigo_invente": pa.Column(str, nullable=True),  # INVENTE, no DIR3
+        "instrumento": pa.Column(str, nullable=True),
+        "importe": pa.Column(float, nullable=True),
+        "ayuda_equivalente": pa.Column(float, nullable=True),
+        "beneficiario_id": pa.Column(str, nullable=True),  # idPersona (estable)
+        "beneficiario_nif": pa.Column(str, nullable=True),  # enmascarado si física
+        "beneficiario_nombre": pa.Column(str, nullable=True),
+        "beneficiario_tipo": pa.Column(str, pa.Check.isin(["fisica", "juridica"]), nullable=True),
+        "tiene_proyecto": pa.Column("object", nullable=True),  # bool o None
+        "url_br": pa.Column(str, nullable=True),
+        "fecha_concesion": pa.Column("object", nullable=True),  # datetime.date
+        "fecha_alta": pa.Column("object", nullable=True),
+    },
+    strict=True,
+    coerce=False,
+)
+
+# ---------------------------------------------------------------------------
+# BOE — disposiciones de interés del sumario diario (tercera velocidad)
+#
+# GRANO: una fila por disposición de interés (clave natural = identificador
+# BOE). NO es contabilidad (CLAUDE.md §3): señal de "decisiones políticas". El
+# importe se extrae del texto con un grado de confianza; si no hay cifra
+# parseable queda nulo y el texto bruto se conserva (CLAUDE.md §9). El anclaje
+# (a SECCIÓN, no a servicio) lo añade transform/anclaje_organico.py.
+# ---------------------------------------------------------------------------
+
+_TIPO_DISPOSICION = [
+    "convocatoria_subvencion",
+    "subvencion_directa",
+    "credito_extraordinario",
+    "suplemento_credito",
+    "transferencia_credito",
+    "modificacion_credito",
+    "otro",
+]
+_IMPORTE_CONFIANZA = ["alta", "media", "sin_importe"]
+
+boe_disposicion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("boe_sumario")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        "identificador": pa.Column(str, unique=True),  # BOE-A/B-AAAA-N
+        "fecha": pa.Column("object"),  # datetime.date
+        # Sección del BOE (1, 3, 5B…): la del boletín, NO la presupuestaria.
+        "seccion_boe": pa.Column(str, nullable=True),
+        "departamento": pa.Column(str, nullable=True),  # ministerio proponente (texto)
+        "tipo_disposicion": pa.Column(str, pa.Check.isin(_TIPO_DISPOSICION)),
+        "titulo": pa.Column(str, nullable=True),
+        "bdns_id": pa.Column(str, nullable=True),  # puente con BDNS (extractos SNPS)
+        "importe": pa.Column(float, nullable=True),
+        "importe_confianza": pa.Column(str, pa.Check.isin(_IMPORTE_CONFIANZA)),
+        "url_oficial": pa.Column(str, nullable=True),
+        "texto_bruto": pa.Column(str, nullable=True),  # conservado para revisión
+    },
+    strict=True,
+    coerce=False,
+)
+
+# ---------------------------------------------------------------------------
+# Consejo de Ministros — acuerdos del SUMARIO de la referencia (tercera velocidad)
+#
+# GRANO: una fila por acuerdo del SUMARIO. Clave natural sintética
+# acuerdo_id = "<fecha>#<índice>" (la referencia no da id estable por acuerdo).
+# Misma filosofía de señal que el BOE: importe con confianza, texto bruto
+# conservado, anclaje a SECCIÓN por ministerio proponente.
+# ---------------------------------------------------------------------------
+
+_TIPO_ACUERDO = [
+    "autorizacion_gasto",
+    "subvencion",
+    "transferencia_credito",
+    "credito_suplemento",
+    "convenio",
+    "norma",
+    "personal",
+    "otro",
+]
+
+cdm_acuerdo_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("consejo_ministros")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        "acuerdo_id": pa.Column(str, unique=True),  # "<fecha>#<índice>"
+        "fecha": pa.Column("object"),  # datetime.date
+        "ministerio": pa.Column(str, nullable=True),  # proponente (forma corta del h3)
+        "tipo_acuerdo": pa.Column(str, pa.Check.isin(_TIPO_ACUERDO)),
+        "descripcion": pa.Column(str, nullable=True),
+        "importe": pa.Column(float, nullable=True),
+        "importe_confianza": pa.Column(str, pa.Check.isin(_IMPORTE_CONFIANZA)),
+        "vintage": pa.Column(str, nullable=True),
+        "url_oficial": pa.Column(str, nullable=True),
+        "texto_bruto": pa.Column(str, nullable=True),
+    },
+    strict=True,
+    coerce=False,
+)
+
 # Estados oficiales de una unidad DIR3 (hoja "Catálogos de clasificación" del
 # fichero oficial): Vigente, Extinguido, Anulado, Transitorio.
 DIR3_ESTADOS = ("V", "E", "A", "T")
-
-# Códigos DIR3: letra(s) + dígitos, p. ej. "E04921901", "EA0008567".
-_DIR3_COD_REGEX = r"^[A-Z]{1,2}\d{7,8}$"
 
 dim_seccion_servicio_schema = pa.DataFrameSchema(
     {

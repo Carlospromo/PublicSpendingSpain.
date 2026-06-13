@@ -9,10 +9,10 @@
 --   * Ancla orgánica del hecho: dim_seccion_servicio por (ejercicio, seccion,
 --     servicio). dim_organica (DIR3, SCD2) es referencia, no FK del hecho,
 --     mientras su crosswalk presupuesto<->DIR3 siga pendiente.
---   * Los hechos de la Fase 4 (fact_contratos, fact_subvenciones,
---     fact_acuerdos_cdm) NO se crean aquí: su esquema se fijará tras
---     inspeccionar las fuentes reales (CLAUDE.md §9). dim_fuente ya reserva
---     sus códigos y velocidades.
+--   * Hechos de la Fase 4 ya incorporados (esquema fijado tras inspeccionar
+--     la fuente real, CLAUDE.md §9): fact_contratos (PLACSP) y
+--     fact_subvenciones (BDNS). Pendientes: los hechos de BOE y Consejo de
+--     Ministros; dim_fuente ya reserva sus códigos y velocidades.
 --
 -- Idempotente: CREATE ... IF NOT EXISTS en todo; ejecutable sobre un fichero
 -- nuevo (build) o existente (update).
@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS dim_organica (
     nivel_jerarquico         INTEGER,
     nivel_organico           VARCHAR,
     nivel_organico_senal     VARCHAR,
+    -- Tipo de entidad pública DIR3 (MN = estructura ministerial AGE; OA/AT/EE/
+    -- SM/AP/… = ente con presupuesto propio): frontera de perímetro del anclaje.
+    tipo_entidad             VARCHAR,
     estado                   VARCHAR,
     fecha_inicio             DATE NOT NULL,
     fecha_fin                DATE,
@@ -198,6 +201,217 @@ CREATE INDEX IF NOT EXISTS idx_fact_ejecucion_programa
 CREATE INDEX IF NOT EXISTS idx_fact_ejecucion_economica
     ON fact_ejecucion (economica_cod);
 
+-- Adjudicaciones PLACSP (velocidad "compromisos jurídicos", Fase 4). Esquema
+-- fijado tras inspeccionar la fuente real (docs/placsp_estructura.md).
+--
+--  * Clave natural = (licitacion_id, lote_id): el id numérico de plataforma es
+--    estable entre republicaciones (VERIFICADO sobre el ZIP 2012); el
+--    expediente_id NO es único entre órganos. lote_id '0' = sin lotes.
+--  * Semántica de upsert = ÚLTIMA FOTO de cada licitación (la recarga borra el
+--    bloque completo de la licitación y lo reinserta): PLACSP republica el
+--    mismo expediente con estado actualizado; el historial de fotos queda en
+--    la capa raw versionada (git-scraping), no en el warehouse.
+--  * Anclaje orgánico explícito (anclaje_tipo/anclaje_senal): servicio |
+--    organica_sin_servicio | fuera_perimetro | sin_anclar. seccion/servicio
+--    solo informados si ancla a servicio; "sin anclar" se CONSERVA y cuenta.
+--  * es_cabecera_expediente: exactamente una fila por licitación lleva las
+--    magnitudes de licitación (presupuesto_*, valor_estimado) para que sumen
+--    sin doble conteo; importe_adjudicacion es aditivo en todas las filas.
+--  * Importes: con/sin IVA SEPARADOS (presupuesto_con_iva incluye impuestos;
+--    el importe de adjudicación CODICE es el PayableAmount del lote).
+CREATE TABLE IF NOT EXISTS fact_contratos (
+    licitacion_id            VARCHAR NOT NULL,
+    lote_id                  VARCHAR NOT NULL,
+    fuente_cod               VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo                  VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio                INTEGER NOT NULL,
+    expediente_id            VARCHAR,
+    es_cabecera_expediente   BOOLEAN NOT NULL,
+    organo_id                VARCHAR,
+    organo_id_esquema        VARCHAR,
+    organo_dir3_cod          VARCHAR,
+    organo_denominacion      VARCHAR,
+    seccion_cod              VARCHAR,
+    servicio_cod             VARCHAR,
+    anclaje_dir3_cod         VARCHAR,
+    anclaje_tipo             VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('servicio', 'organica_sin_servicio', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal            VARCHAR NOT NULL,
+    tipo_contrato_cod        VARCHAR,
+    subtipo_contrato_cod     VARCHAR,
+    procedimiento_cod        VARCHAR,
+    cpv_cod                  VARCHAR,
+    estado_cod               VARCHAR,
+    resultado_cod            VARCHAR,
+    presupuesto_sin_iva      DOUBLE,
+    presupuesto_con_iva      DOUBLE,
+    valor_estimado           DOUBLE,
+    importe_adjudicacion     DOUBLE,
+    num_ofertas              VARCHAR,
+    adjudicatario_id         VARCHAR,
+    adjudicatario_id_esquema VARCHAR,
+    adjudicatario_nombre     VARCHAR,
+    adjudicatario_es_pyme    BOOLEAN,
+    fecha_adjudicacion       DATE,
+    fecha_formalizacion      DATE,
+    fecha_actualizacion      DATE,
+    fecha_captura            DATE NOT NULL,
+    PRIMARY KEY (licitacion_id, lote_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_organica
+    ON fact_contratos (ejercicio, seccion_cod, servicio_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_adjudicatario
+    ON fact_contratos (adjudicatario_id);
+CREATE INDEX IF NOT EXISTS idx_fact_contratos_organo
+    ON fact_contratos (organo_dir3_cod);
+
+-- Concesiones de subvenciones BDNS/SNPSAP (velocidad "compromisos jurídicos",
+-- Fase 4). Esquema fijado tras verificar la API real (docs/bdns_estructura.md).
+--
+--  * GRANO = concesión (donde vive el importe comprometido); la convocatoria
+--    es ATRIBUTO (id/código/título), nunca fila: sumar convocatorias y
+--    concesiones a la vez sería doble conteo. El presupuestoTotal de la
+--    convocatoria NO entra en este hecho.
+--  * Clave natural = concesion_id (id numérico de plataforma; las correcciones
+--    republican el mismo id → el upsert pisa la foto anterior).
+--  * El órgano concedente llega como TEXTO (nivel1/2/3, sin DIR3): el anclaje
+--    resuelve nivel3 → DIR3 por denominación y de ahí a (sección, servicio).
+--    Mismas etiquetas que fact_contratos; "sin anclar" se CONSERVA y cuenta.
+--  * Las subvenciones NO tienen que cuadrar con la ORN (magnitudes distintas,
+--    no subconjuntos): quedan fuera de los checks contables de la Fase 3.
+CREATE TABLE IF NOT EXISTS fact_subvenciones (
+    concesion_id             VARCHAR NOT NULL,
+    fuente_cod               VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo                  VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio                INTEGER NOT NULL,
+    concesion_cod            VARCHAR,
+    convocatoria_id          VARCHAR,
+    convocatoria_cod         VARCHAR,
+    convocatoria_titulo      VARCHAR,
+    nivel1                   VARCHAR,
+    nivel2                   VARCHAR,
+    nivel3                   VARCHAR,
+    codigo_invente           VARCHAR,
+    seccion_cod              VARCHAR,
+    servicio_cod             VARCHAR,
+    anclaje_dir3_cod         VARCHAR,
+    anclaje_tipo             VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('servicio', 'organica_sin_servicio', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal            VARCHAR NOT NULL,
+    instrumento              VARCHAR,
+    importe                  DOUBLE,
+    ayuda_equivalente        DOUBLE,
+    beneficiario_id          VARCHAR,
+    beneficiario_nif         VARCHAR,  -- enmascarado de origen si persona física
+    beneficiario_nombre      VARCHAR,
+    beneficiario_tipo        VARCHAR CHECK (beneficiario_tipo IN ('fisica', 'juridica')),
+    tiene_proyecto           BOOLEAN,
+    url_br                   VARCHAR,
+    fecha_concesion          DATE,
+    fecha_alta               DATE,
+    fecha_captura            DATE NOT NULL,
+    PRIMARY KEY (concesion_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_organica
+    ON fact_subvenciones (ejercicio, seccion_cod, servicio_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_beneficiario
+    ON fact_subvenciones (beneficiario_id);
+CREATE INDEX IF NOT EXISTS idx_fact_subvenciones_convocatoria
+    ON fact_subvenciones (convocatoria_id);
+
+-- Disposiciones de interés del BOE (velocidad "decisiones políticas", Fase 4).
+-- Esquema fijado tras verificar la API de datos abiertos (docs/boe_estructura.md).
+--
+--  * GRANO = una disposición de interés (clave natural = identificador BOE).
+--    NO es contabilidad (CLAUDE.md §3): es señal/alerta temprana. Por eso NO
+--    entra en los checks contables de la Fase 3 ni se cuadra con la ORN.
+--  * Anclaje a SECCIÓN (no a servicio/DG): el texto solo da el ministerio
+--    proponente. anclaje_tipo ∈ {seccion, fuera_perimetro, sin_anclar}; nada
+--    se descarta (lo no mapeable se etiqueta y se conserva).
+--  * Importe extraído del texto con grado de confianza (alta|media|
+--    sin_importe); NULL si no hay cifra parseable. texto_bruto SIEMPRE
+--    conservado para revisión humana (CLAUDE.md §9). url_oficial preservada.
+--  * bdns_id: en extractos SNPS enlaza con la convocatoria/concesión BDNS.
+--  * seccion_boe = sección del boletín (1/3/5B…), NO la presupuestaria.
+CREATE TABLE IF NOT EXISTS fact_boe_disposiciones (
+    identificador     VARCHAR NOT NULL,
+    fuente_cod        VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo           VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio         INTEGER NOT NULL,
+    fecha             DATE NOT NULL,
+    seccion_boe       VARCHAR,
+    departamento      VARCHAR,
+    tipo_disposicion  VARCHAR NOT NULL CHECK (tipo_disposicion IN (
+        'convocatoria_subvencion', 'subvencion_directa', 'credito_extraordinario',
+        'suplemento_credito', 'transferencia_credito', 'modificacion_credito', 'otro')),
+    titulo            VARCHAR,
+    bdns_id           VARCHAR,
+    importe           DOUBLE,
+    importe_confianza VARCHAR NOT NULL CHECK (
+        importe_confianza IN ('alta', 'media', 'sin_importe')),
+    seccion_cod       VARCHAR,
+    anclaje_tipo      VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('seccion', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal     VARCHAR NOT NULL,
+    url_oficial       VARCHAR,
+    texto_bruto       VARCHAR,
+    fecha_captura     DATE NOT NULL,
+    PRIMARY KEY (identificador)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_boe_seccion
+    ON fact_boe_disposiciones (ejercicio, seccion_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_boe_tipo
+    ON fact_boe_disposiciones (tipo_disposicion);
+CREATE INDEX IF NOT EXISTS idx_fact_boe_bdns
+    ON fact_boe_disposiciones (bdns_id);
+
+-- Acuerdos del Consejo de Ministros (velocidad "decisiones políticas", Fase 4).
+-- Esquema fijado tras verificar las referencias reales
+-- (docs/consejo_ministros_estructura.md).
+--
+--  * GRANO = un acuerdo del SUMARIO de la referencia. Clave natural SINTÉTICA
+--    acuerdo_id = "<fecha>#<índice>" (la referencia no da id estable): la carga
+--    REEMPLAZA el bloque completo de la fecha (reparsear es idempotente aunque
+--    cambie el nº de acuerdos).
+--  * Misma naturaleza de señal que el BOE: anclaje a SECCIÓN por ministerio
+--    proponente, importe con confianza, texto_bruto conservado, fuera de los
+--    checks contables. A diferencia del BOE, aquí NADA se prefiltra: todos los
+--    acuerdos del SUMARIO se ingieren (los irrelevantes quedan en otro/personal).
+CREATE TABLE IF NOT EXISTS fact_acuerdos_cdm (
+    acuerdo_id        VARCHAR NOT NULL,
+    fuente_cod        VARCHAR NOT NULL REFERENCES dim_fuente (fuente_cod),
+    periodo           VARCHAR NOT NULL REFERENCES dim_periodo (periodo),
+    ejercicio         INTEGER NOT NULL,
+    fecha             DATE NOT NULL,
+    ministerio        VARCHAR,
+    tipo_acuerdo      VARCHAR NOT NULL CHECK (tipo_acuerdo IN (
+        'autorizacion_gasto', 'subvencion', 'transferencia_credito',
+        'credito_suplemento', 'convenio', 'norma', 'personal', 'otro')),
+    descripcion       VARCHAR,
+    importe           DOUBLE,
+    importe_confianza VARCHAR NOT NULL CHECK (
+        importe_confianza IN ('alta', 'media', 'sin_importe')),
+    seccion_cod       VARCHAR,
+    anclaje_tipo      VARCHAR NOT NULL CHECK (anclaje_tipo IN
+        ('seccion', 'fuera_perimetro', 'sin_anclar')),
+    anclaje_senal     VARCHAR NOT NULL,
+    vintage           VARCHAR,
+    url_oficial       VARCHAR,
+    texto_bruto       VARCHAR,
+    fecha_captura     DATE NOT NULL,
+    PRIMARY KEY (acuerdo_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fact_cdm_seccion
+    ON fact_acuerdos_cdm (ejercicio, seccion_cod);
+CREATE INDEX IF NOT EXISTS idx_fact_cdm_tipo
+    ON fact_acuerdos_cdm (tipo_acuerdo);
+CREATE INDEX IF NOT EXISTS idx_fact_cdm_fecha
+    ON fact_acuerdos_cdm (fecha);
+
 -- ----------------------------------------------------------------------------
 -- Vistas de exposición
 -- ----------------------------------------------------------------------------
@@ -245,6 +459,157 @@ JOIN dim_seccion_servicio ss
    AND ss.servicio_cod = f.servicio_cod
 JOIN dim_programa pr USING (programa_cod)
 JOIN dim_economica ec USING (economica_cod);
+
+-- Adjudicaciones desnormalizadas con su ancla orgánica (LEFT JOIN: las no
+-- ancladas se exponen igualmente — "sin anclar contabilizado es información").
+CREATE OR REPLACE VIEW v_contratos AS
+SELECT
+    c.licitacion_id,
+    c.lote_id,
+    c.expediente_id,
+    c.periodo,
+    c.ejercicio,
+    p.mes,
+    c.organo_dir3_cod,
+    c.organo_denominacion,
+    c.organo_id_esquema,
+    c.seccion_cod,
+    ss.seccion_denominacion,
+    c.servicio_cod,
+    ss.servicio_denominacion,
+    c.anclaje_tipo,
+    c.anclaje_senal,
+    c.anclaje_dir3_cod,
+    c.tipo_contrato_cod,
+    c.subtipo_contrato_cod,
+    c.procedimiento_cod,
+    c.cpv_cod,
+    c.estado_cod,
+    c.resultado_cod,
+    c.es_cabecera_expediente,
+    c.presupuesto_sin_iva,
+    c.presupuesto_con_iva,
+    c.valor_estimado,
+    c.importe_adjudicacion,
+    c.num_ofertas,
+    c.adjudicatario_id,
+    c.adjudicatario_nombre,
+    c.adjudicatario_es_pyme,
+    c.fecha_adjudicacion,
+    c.fecha_formalizacion,
+    c.fecha_actualizacion,
+    c.fecha_captura
+FROM fact_contratos c
+JOIN dim_periodo p USING (periodo)
+LEFT JOIN dim_seccion_servicio ss
+    ON ss.ejercicio = c.ejercicio
+   AND ss.seccion_cod = c.seccion_cod
+   AND ss.servicio_cod = c.servicio_cod;
+
+-- Concesiones desnormalizadas con su ancla orgánica (LEFT JOIN: las no
+-- ancladas se exponen igualmente — "sin anclar contabilizado es información").
+CREATE OR REPLACE VIEW v_subvenciones AS
+SELECT
+    s.concesion_id,
+    s.concesion_cod,
+    s.convocatoria_id,
+    s.convocatoria_cod,
+    s.convocatoria_titulo,
+    s.periodo,
+    s.ejercicio,
+    p.mes,
+    s.nivel1,
+    s.nivel2,
+    s.nivel3,
+    s.seccion_cod,
+    ss.seccion_denominacion,
+    s.servicio_cod,
+    ss.servicio_denominacion,
+    s.anclaje_tipo,
+    s.anclaje_senal,
+    s.anclaje_dir3_cod,
+    s.instrumento,
+    s.importe,
+    s.ayuda_equivalente,
+    s.beneficiario_id,
+    s.beneficiario_nif,
+    s.beneficiario_nombre,
+    s.beneficiario_tipo,
+    s.fecha_concesion,
+    s.fecha_alta,
+    s.fecha_captura
+FROM fact_subvenciones s
+JOIN dim_periodo p USING (periodo)
+LEFT JOIN dim_seccion_servicio ss
+    ON ss.ejercicio = s.ejercicio
+   AND ss.seccion_cod = s.seccion_cod
+   AND ss.servicio_cod = s.servicio_cod;
+
+-- Denominación de una SECCIÓN para un ejercicio, tolerante a la vigencia: las
+-- fuentes de "decisiones políticas" anclan a sección y su ejercicio puede no
+-- estar en el seed PGE (solo cubre los ejercicios cargados). La denominación se
+-- toma de la estructura del ejercicio MÁS CERCANO disponible (desempate: el más
+-- reciente), igual que hace AncladorSeccion al anclar. Macro reutilizada por las
+-- dos vistas vía subconsulta correlacionada.
+
+-- Disposiciones BOE desnormalizadas con su ancla de sección (LEFT JOIN implícito
+-- vía subconsulta: las no ancladas se exponen igualmente — "sin anclar
+-- contabilizado es información").
+CREATE OR REPLACE VIEW v_boe_disposiciones AS
+SELECT
+    b.identificador,
+    b.periodo,
+    b.ejercicio,
+    p.mes,
+    b.fecha,
+    b.seccion_boe,
+    b.departamento,
+    b.seccion_cod,
+    (SELECT d.seccion_denominacion
+     FROM dim_seccion_servicio d
+     WHERE d.seccion_cod = b.seccion_cod AND d.seccion_denominacion IS NOT NULL
+     ORDER BY abs(d.ejercicio - b.ejercicio), d.ejercicio DESC
+     LIMIT 1) AS seccion_denominacion,
+    b.anclaje_tipo,
+    b.anclaje_senal,
+    b.tipo_disposicion,
+    b.titulo,
+    b.bdns_id,
+    b.importe,
+    b.importe_confianza,
+    b.url_oficial,
+    b.texto_bruto,
+    b.fecha_captura
+FROM fact_boe_disposiciones b
+JOIN dim_periodo p USING (periodo);
+
+-- Acuerdos del Consejo desnormalizados con su ancla de sección.
+CREATE OR REPLACE VIEW v_acuerdos_cdm AS
+SELECT
+    a.acuerdo_id,
+    a.periodo,
+    a.ejercicio,
+    p.mes,
+    a.fecha,
+    a.ministerio,
+    a.seccion_cod,
+    (SELECT d.seccion_denominacion
+     FROM dim_seccion_servicio d
+     WHERE d.seccion_cod = a.seccion_cod AND d.seccion_denominacion IS NOT NULL
+     ORDER BY abs(d.ejercicio - a.ejercicio), d.ejercicio DESC
+     LIMIT 1) AS seccion_denominacion,
+    a.anclaje_tipo,
+    a.anclaje_senal,
+    a.tipo_acuerdo,
+    a.descripcion,
+    a.importe,
+    a.importe_confianza,
+    a.vintage,
+    a.url_oficial,
+    a.texto_bruto,
+    a.fecha_captura
+FROM fact_acuerdos_cdm a
+JOIN dim_periodo p USING (periodo);
 
 -- "Último dato disponible": el periodo máximo cargado de cada ejercicio
 -- (el Anexo I es acumulado, así que ese mes ES la foto vigente del ejercicio).

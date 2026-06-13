@@ -1,0 +1,8 @@
+# Overrides manuales: órgano concedente BDNS (nivel3, texto) → unidad DIR3.
+# La API del SNPSAP no publica DIR3 (solo la denominación); la resolución
+# automática es por denominación normalizada dentro del subárbol del
+# ministerio (nivel2), y este fichero cubre los nombres que la BDNS escribe
+# distinto del DIR3. SIEMPRE prevalece sobre el automático. Cada entrada debe
+# estar verificada a mano contra el directorio DIR3 (anotar la razón en nota).
+organo_bdns,dir3_cod,nota
+"AGENCIA ESTATAL AGENCIA ESPAÑOLA DE COOPERACIÓN INTERNACIONAL PARA EL DESARROLLO",EA0045628,"la denominación DIR3 añade el sufijo (AECID): el match exacto y el de tokens fallan; verificado 2026-06-12"

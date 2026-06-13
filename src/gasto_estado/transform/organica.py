@@ -31,6 +31,7 @@ DIM_COLUMNS = [
     "nivel_jerarquico",
     "nivel_organico",
     "nivel_organico_senal",
+    "tipo_entidad",
     "estado",
     "fecha_inicio",
     "fecha_fin",
@@ -71,6 +72,10 @@ def build_dim_organica(unidades: pd.DataFrame, *, capture_date: date) -> pd.Data
             "nivel_organico_senal": pd.Series(
                 [senal for _, senal in clasificacion], index=unidades.index
             ),
+            # Tipo de entidad pública DIR3 (MN=estructura ministerial; OA/AT/
+            # EE/SM/AP/…=ente con presupuesto propio). Es la frontera de
+            # perímetro presupuestario que usa el anclaje PLACSP.
+            "tipo_entidad": unidades["tipo_entidad"],
             "estado": unidades["estado"],
             "fecha_inicio": unidades["fecha_alta"].map(
                 lambda alta: alta if alta is not None else capture_date

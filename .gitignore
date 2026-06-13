@@ -25,6 +25,13 @@ data/*.duckdb.wal
 data/**/*.parquet
 
 # La capa raw SÍ se versiona (git-scraping): no ignorar data/raw/
+# EXCEPCIÓN: una captura PLACSP pesa 10-160 MB (vs <1,5 MB de IGAE); ese raw
+# masivo se regenera con el extractor (docs/placsp_estructura.md §2).
+data/raw/placsp/
+# EXCEPCIÓN: una ventana anual estatal de la BDNS son millones de concesiones;
+# ese raw se regenera con el extractor por ventana de fechas
+# (docs/bdns_estructura.md §2).
+data/raw/bdns/
 
 # IDE / SO
 .idea/

@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='utf-8'?>
+<documento xmlns:ns1="http://data.europa.eu/eli/ontology#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" fecha_actualizacion="20251220192601">
+  <metadatos>
+    <identificador>BOE-A-2024-22930</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="9586">Ministerio de Transportes y Movilidad Sostenible</departamento>
+    <rango codigo="1340">Real Decreto</rango>
+    <fecha_disposicion>20241105</fecha_disposicion>
+    <numero_oficial>1119/2024</numero_oficial>
+    <titulo>Real Decreto 1119/2024, de 5 de noviembre, por el que se regula la concesión directa de una subvención al Ayuntamiento de Errenteria para la ejecución de un aparcamiento disuasorio en la estación de Lezo-Errenteria.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20241106</fecha_publicacion>
+    <diario_numero>268</diario_numero>
+    <seccion>1</seccion>
+    <subseccion />
+    <pagina_inicial>141216</pagina_inicial>
+    <pagina_final>141222</pagina_final>
+    <suplemento_pagina_inicial />
+    <suplemento_pagina_final />
+    <url_pdf>https://www.boe.es/boe/dias/2024/11/06/pdfs/BOE-A-2024-22930.pdf</url_pdf>
+    <url_epub>
+      <url_epub>https://www.boe.es/diario_boe/epub.php?id=BOE-A-2024-22930</url_epub>
+    </url_epub>
+    <url_pdf_catalan />
+    <url_pdf_euskera />
+    <url_pdf_gallego />
+    <url_pdf_valenciano />
+    <estatus_legislativo>L</estatus_legislativo>
+    <fecha_vigencia>20241107</fecha_vigencia>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion />
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion />
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0" />
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen />
+    <url_eli>https://www.boe.es/eli/es/rd/2024/11/05/1119</url_eli>
+  </metadatos>
+  <metadata-eli>
+    <rdf:RDF>
+      <ns1:LegalResource rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119">
+        <ns1:jurisdiction rdf:resource="http://www.elidata.es/mdr/authority/jurisdiction/1/es" />
+        <ns1:type_document rdf:resource="http://www.elidata.es/mdr/authority/resource-type/1/rd" />
+        <ns1:id_local rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BOE-A-2024-22930</ns1:id_local>
+        <ns1:date_document rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-11-05</ns1:date_document>
+        <ns1:number rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1119</ns1:number>
+        <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/256" />
+        <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/420" />
+        <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/3979" />
+        <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/5453" />
+        <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/6800" />
+        <ns1:has_member>
+          <ns1:LegalResource rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof">
+            <ns1:jurisdiction rdf:resource="http://www.elidata.es/mdr/authority/jurisdiction/1/es" />
+            <ns1:type_document rdf:resource="http://www.elidata.es/mdr/authority/resource-type/1/rd" />
+            <ns1:id_local rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BOE-A-2024-22930</ns1:id_local>
+            <ns1:date_document rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-11-05</ns1:date_document>
+            <ns1:number rdf:datatype="http://www.w3.org/2001/XMLSchema#string">1119</ns1:number>
+            <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/256" />
+            <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/420" />
+            <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/3979" />
+            <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/5453" />
+            <ns1:is_about rdf:resource="https://www.boe.es/legislacion/eli/materias/6800" />
+            <ns1:version rdf:resource="http://www.elidata.es/mdr/authority/version/dof" />
+            <ns1:is_member_of rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119" />
+            <ns1:is_realized_by>
+              <ns1:LegalExpression rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa">
+                <ns1:language rdf:resource="http://www.elidata.es/mdr/authority/language/spa" />
+                <ns1:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Real Decreto 1119/2024, de 5 de noviembre, por el que se regula la concesión directa de una subvención al Ayuntamiento de Errenteria para la ejecución de un aparcamiento disuasorio en la estación de Lezo-Errenteria.</ns1:title>
+                <ns1:publisher_agent rdf:resource="https://www.boe.es" />
+                <ns1:date_publication rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-11-06</ns1:date_publication>
+                <ns1:realizes rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof" />
+                <ns1:is_embodied_by>
+                  <ns1:Format rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa/epub">
+                    <ns1:format rdf:resource="http://www.iana.org/assignments/media-types/application/epub+zip" />
+                    <ns1:embodies rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa" />
+                  </ns1:Format>
+                </ns1:is_embodied_by>
+                <ns1:is_embodied_by>
+                  <ns1:Format rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa/html">
+                    <ns1:format rdf:resource="http://www.iana.org/assignments/media-types/text/html" />
+                    <ns1:embodies rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa" />
+                  </ns1:Format>
+                </ns1:is_embodied_by>
+                <ns1:is_embodied_by>
+                  <ns1:Format rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa/pdf">
+                    <ns1:format rdf:resource="http://www.iana.org/assignments/media-types/application/pdf" />
+                    <ns1:embodies rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa" />
+                  </ns1:Format>
+                </ns1:is_embodied_by>
+                <ns1:is_embodied_by>
+                  <ns1:Format rdf:about="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa/xml">
+                    <ns1:format rdf:resource="http://www.iana.org/assignments/media-types/application/xml" />
+                    <ns1:embodies rdf:resource="https://www.boe.es/eli/es/rd/2024/11/05/1119/dof/spa" />
+                  </ns1:Format>
+                </ns1:is_embodied_by>
+              </ns1:LegalExpression>
+            </ns1:is_realized_by>
+          </ns1:LegalResource>
+        </ns1:has_member>
+      </ns1:LegalResource>
+    </rdf:RDF>
+  </metadata-eli>
+  <analisis>
+    <materias>
+      <materia codigo="256" orden="1">Aparcamiento</materia>
+      <materia codigo="420" orden="1">Ayudas</materia>
+      <materia codigo="3979" orden="1">Guipúzcoa</materia>
+      <materia codigo="5453" orden="1">Ministerio de Transportes y Movilidad Sostenible</materia>
+      <materia codigo="6800" orden="1">Subvenciones</materia>
+    </materias>
+    <notas />
+    <referencias>
+      <anteriores>
+        <anterior referencia="BOE-A-2006-13371" orden="3060">
+          <palabra codigo="440">DE CONFORMIDAD con</palabra>
+          <texto>el art. 67 del Reglamento aprobado por Real Decreto 887/2006, de 21 de julio</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2003-20977" orden="3060">
+          <palabra codigo="440">DE CONFORMIDAD con</palabra>
+          <texto>los arts. 22.2.c) y 28 de la Ley 38/2003, de 17 de noviembre</texto>
+        </anterior>
+      </anteriores>
+      <posteriores />
+    </referencias>
+    <alertas>
+      <alerta codigo="132" orden="1">Transportes y tráfico</alerta>
+    </alertas>
+  </analisis>
+  <texto>
+    <p class="parrafo">El presente real decreto se dicta con el objeto de dotar de una subvención de concesión directa al Ayuntamiento de Errenteria para la ejecución de un aparcamiento disuasorio en la estación de Lezo-Errenteria, regulada por la Ley 38/2003, de 17 de noviembre, General de Subvenciones. La construcción de dicho aparcamiento se realiza con vistas a mejorar la accesibilidad de la estación, así como mejorar el acceso al servicio de transporte ferroviario, fomentando con ello la movilidad sostenible en la comarca de Oarsoaldea y en el ámbito metropolitano de Donostia/San Sebastián. Esta actuación contribuye, asimismo, a los fines previstos en la Agenda 2030 para el Desarrollo Sostenible y, en concreto, al ODS 11.2, que apuesta por sistemas de transporte accesibles y sostenibles. Esta actuación presenta un manifiesto interés público, pudiendo aplicarse, por tanto, lo dispuesto en el artículo 22.2.c) de la Ley 38/2003, de 17 de noviembre.</p>
+    <p class="articulo">Artículo 1. Objeto y finalidad de la ayuda.</p>
+    <p class="parrafo">1. El presente real decreto tiene por objeto regular la concesión directa de una subvención al Ayuntamiento de Errenteria, por un importe máximo de 1.000.000,00 de euros, para sufragar la ejecución de un aparcamiento disuasorio en la estación de Lezo-Errenteria.</p>
+    <p class="parrafo">2. Se autoriza la concesión directa de la subvención objeto de este real decreto, con carácter excepcional y por concurrir razones de interés público, de acuerdo con lo previsto en el artículo 22.2.c) de la Ley 38/2003, de 17 de noviembre, General de Subvenciones, en relación con el artículo 28.2 y 3 de la misma ley, y el artículo 67 del Reglamento de la Ley General de Subvenciones, aprobado por Real Decreto 887/2006, de 21 de julio, habida cuenta del carácter singular de las obras, así como de su complejidad y su necesaria realización, lo que justifica la imposibilidad de la concurrencia pública de la subvención y, por tanto, su convocatoria pública.</p>
+    </texto>
+</documento>

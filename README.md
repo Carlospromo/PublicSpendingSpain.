@@ -46,14 +46,31 @@ uv run pytest                                          # tests + regresión de p
 uv run ruff check . && uv run mypy src/                # calidad
 ```
 
-> **Estado actual: Fases 0–4 completas.** Las tres velocidades de datos están
-> operativas (contable IGAE; compromisos PLACSP+BDNS; decisiones políticas
-> BOE+Consejo de Ministros) sobre la espina orgánica común, con carga idempotente
-> y validaciones contables. `extract`, `build`, `update` y `check` son
-> funcionales; `api` (Fase 6) sigue siendo un stub. El detalle de cobertura,
-> profundidad de anclaje y limitaciones por fuente está en
+> **Estado actual: Fases 0–5 completas; Fase 6 (API) operativa.** Las tres
+> velocidades de datos están operativas (contable IGAE; compromisos PLACSP+BDNS;
+> decisiones políticas BOE+Consejo de Ministros) sobre la espina orgánica común,
+> con carga idempotente, validaciones contables, métricas y alertas analíticas
+> (`docs/metricas.md`, `docs/alertas.md`). `extract`, `build`, `update`, `check` y
+> `api` son funcionales. El detalle de cobertura, profundidad de anclaje y
+> limitaciones por fuente está en
 > [`docs/cobertura_fuentes.md`](docs/cobertura_fuentes.md); el estado por fase, en
 > [`CLAUDE.md`](CLAUDE.md) §10.
+
+## API local (solo lectura)
+
+```bash
+uv run gasto-estado build                 # asegúrate de tener el warehouse
+uv run gasto-estado api --port 8000       # FastAPI de solo lectura
+# Documentación interactiva (OpenAPI): http://127.0.0.1:8000/docs
+# Estado/frescura para el frontal:      http://127.0.0.1:8000/salud
+```
+
+La API es una capa de exposición fina: invoca las funciones puras de
+`analytics/metrics.py` y `analytics/alerts.py` y propaga sus metadatos de
+fiabilidad (naturaleza, confianza, cobertura de anclaje, advertencias, frescura)
+sin despojarlos. Sirve el warehouse con una conexión DuckDB `read_only` (un cursor
+por petición; ver `src/gasto_estado/api/app.py`). El contrato formal y estable es
+trabajo posterior (Prompt 15).
 
 ## Estructura del repositorio
 

@@ -66,16 +66,21 @@ def extract(
         "--paginas",
         help="Páginas ATOM del modo incremental (placsp); 1 = solo la cabecera diaria.",
     ),
+    fecha: str | None = typer.Option(
+        None,
+        "--fecha",
+        help="Día concreto (YYYY-MM-DD) a descargar (boe, consejo_ministros).",
+    ),
     desde: str | None = typer.Option(
         None,
         "--desde",
-        help="Inicio de la ventana de concesión (YYYY-MM-DD, bdns); "
-        "por defecto, 7 días antes de --hasta.",
+        help="Inicio de la ventana (YYYY-MM-DD): concesión en bdns, publicación "
+        "en boe/consejo_ministros. Por defecto, 7 días antes de --hasta.",
     ),
     hasta: str | None = typer.Option(
         None,
         "--hasta",
-        help="Fin de la ventana de concesión (YYYY-MM-DD, bdns); por defecto, hoy.",
+        help="Fin de la ventana (YYYY-MM-DD, bdns/boe/consejo_ministros); por defecto, hoy.",
     ),
     ambito: str = typer.Option(
         "C",
@@ -84,9 +89,18 @@ def extract(
     ),
 ) -> None:
     """Descarga datos de una fuente oficial a la capa raw (inmutable)."""
-    if source in ("dir3", "pge_organica", "igae", "placsp", "bdns"):
+    fuentes = ("dir3", "pge_organica", "igae", "placsp", "bdns", "boe", "consejo_ministros")
+    if source in fuentes:
         _bootstrap_repo_root()
-        from gasto_estado.extractors import bdns_api, dir3, igae_mensual, pge_organica, placsp_atom
+        from gasto_estado.extractors import (
+            bdns_api,
+            boe_sumario,
+            consejo_ministros,
+            dir3,
+            igae_mensual,
+            pge_organica,
+            placsp_atom,
+        )
         from gasto_estado.extractors.base import SourceBlockedError
 
         try:
@@ -98,6 +112,12 @@ def extract(
                 hasta_d = date.fromisoformat(hasta) if hasta else date.today()
                 desde_d = date.fromisoformat(desde) if desde else hasta_d - timedelta(days=7)
                 saved = bdns_api.extract(desde=desde_d, hasta=hasta_d, ambito=ambito)
+            elif source in ("boe", "consejo_ministros"):
+                fecha_dia = date.fromisoformat(fecha) if fecha else None
+                hasta_v = date.fromisoformat(hasta) if hasta else None
+                desde_v = date.fromisoformat(desde) if desde else None
+                extractor_fn = boe_sumario.extract if source == "boe" else consejo_ministros.extract
+                saved = extractor_fn(fecha=fecha_dia, desde=desde_v, hasta=hasta_v)
             else:
                 extractor = {"dir3": dir3.extract, "pge_organica": pge_organica.extract}[source]
                 saved = extractor()

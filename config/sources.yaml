@@ -155,23 +155,60 @@ bdns:
 boe:
   nombre: "BOE — Sumario diario (API XML)"
   descripcion: >
-    Sumario diario del BOE: modificaciones de crédito, reales decretos de
-    concesión de créditos extraordinarios/suplementos, convocatorias.
-  url_base: "https://www.boe.es"  # TODO: verificar endpoint del sumario XML
-  formato: "XML"
+    Sumario diario del BOE como señal de "decisiones políticas" (CLAUDE.md §3):
+    convocatorias de subvenciones (extractos SNPS, con identificador BDNS),
+    concesiones directas de subvención por Real Decreto, y modificaciones
+    presupuestarias con título explícito (créditos extraordinarios, suplementos,
+    transferencias de crédito). VERIFICADO 2026-06-12 con llamadas reales:
+    el sumario se obtiene de la API de datos abiertos
+    GET {url_api}/boe/sumario/<AAAAMMDD> (XML; envelope response>data>sumario>
+    diario>seccion>departamento>[epigrafe]>item). Cada item trae identificador
+    (BOE-A/B-AAAA-N), título, departamento (ministerio proponente) y url_xml de
+    la disposición. La disposición individual (GET {url_xml_disposicion}?id=<ID>)
+    añade analisis>tipo (clasificación oficial; tipo 63 = "Subvenciones (SNPS)",
+    a veces vacío), el texto en <texto><p> y, en subvenciones, el
+    "BDNS(Identif.):" como primer párrafo. Los importes aparecen en el texto en
+    formato español ("1.000.000,00 €", "8.000 euros"); los expresados en letra
+    no se extraen (se marca la confianza). LIMITACIÓN VERIFICADA: las
+    modificaciones de crédito embebidas en Reales Decretos-leyes de medidas
+    amplias (p. ej. RDL 6/2024 de la DANA) NO se nombran en el título y no se
+    detectan por título — son señal, no contabilidad (docs/boe_estructura.md).
+    Estructura y vintages documentados ahí. NOTA raw: los sumarios son pequeños
+    (<300 KB) → SÍ se versionan (git-scraping).
+  url_base: "https://www.boe.es"
+  url_api: "https://www.boe.es/datosabiertos/api"
+  url_sumario_patron: "https://www.boe.es/datosabiertos/api/boe/sumario/{fecha}"  # fecha = AAAAMMDD
+  url_xml_disposicion: "https://www.boe.es/diario_boe/xml.php"  # ?id=<BOE-A-AAAA-N>
+  formato: "XML (datos abiertos)"
   periodicidad: "diaria"
-  perimetro: "AGE"
+  perimetro: "AGE (anclaje a sección por departamento proponente)"
 
 consejo_ministros:
   nombre: "Consejo de Ministros — Referencias (La Moncloa)"
   descripcion: >
-    Acuerdos del Consejo de Ministros: autorizaciones de gasto, transferencias
-    de crédito, convenios. HTML estructurado, publicado tras la reunión semanal
-    (martes).
-  url_base: "https://www.lamoncloa.gob.es"  # TODO: verificar URL de las referencias
+    Referencia (acta-resumen) del Consejo de Ministros como señal de "decisiones
+    políticas" (CLAUDE.md §3): autorizaciones de gasto, suplementos/transferencias
+    de crédito, subvenciones, convenios y nombramientos. HTML estructurado,
+    publicado tras la reunión semanal (normalmente martes). VERIFICADO 2026-06-12
+    con descargas reales: la referencia vive en {url_referencia_patron} (vintage
+    actual, 2024+) o en el patrón antiguo refc<AAAAMMDD>.aspx (2018-~2021).
+    Estructura estable entre vintages: bloque <h2>SUMARIO</h2> con <h3> =
+    ministerio proponente y <li>/<div> = un acuerdo cada uno (texto que empieza
+    por ACUERDO/REAL DECRETO/CONVENIO/…), con el importe embebido ("por importe
+    total de 168.000.000 de euros"). El nombre del ministerio en el h3 va SIN el
+    prefijo "Ministerio de" (p. ej. "Hacienda", "Para la Transición Ecológica y
+    el Reto Demográfico"): el anclaje a sección normaliza y resuelve esa forma
+    corta. Vintages y maquetación en docs/consejo_ministros_estructura.md.
+    NOTA raw: el HTML es <300 KB → SÍ se versiona.
+  url_base: "https://www.lamoncloa.gob.es"
+  url_index: "https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/index.aspx"
+  # Vintage actual (2024+): <AAAAMMDD>-referencia-rueda-de-prensa-ministros.aspx.
+  url_referencia_patron: "https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/{anio}/{fecha}-referencia-rueda-de-prensa-ministros.aspx"
+  # Vintage antiguo (2018-~2021): refc<AAAAMMDD>.aspx (mismo árbol por año).
+  url_referencia_patron_legacy: "https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/{anio}/refc{fecha}.aspx"
   formato: "HTML"
   periodicidad: "semanal (martes)"
-  perimetro: "AGE"
+  perimetro: "AGE (anclaje a sección por ministerio proponente)"
 
 dir3:
   nombre: "DIR3 — Directorio Común de Unidades Orgánicas y Oficinas"

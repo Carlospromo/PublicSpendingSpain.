@@ -17,16 +17,21 @@ import duckdb
 import pandas as pd
 
 from gasto_estado.parsers import bdns as bdns_parser
+from gasto_estado.parsers import boe as boe_parser
+from gasto_estado.parsers import consejo_ministros as cdm_parser
 from gasto_estado.parsers.igae import parse_periodo
 from gasto_estado.parsers.placsp import discover_capturas, parse_capture_dir
 from gasto_estado.parsers.schemas import igae_anexo_i_schema
 from gasto_estado.quality.checks import FAIL, CoherenceError, run_checks
 from gasto_estado.transform.anclaje_organico import (
     ANCLAJE_COLUMNS,
+    ANCLAJE_SECCION_COLUMNS,
     anclar_concesiones,
     anclar_contratos,
+    anclar_por_ministerio,
     load_overrides_organo,
 )
+from gasto_estado.transform.crosswalks.historico import load_historico
 
 MODELO_SQL = Path(__file__).with_name("modelo.sql")
 SEEDS_DIR = Path(__file__).with_name("seeds")
@@ -541,6 +546,170 @@ def _cargar_raw_bdns(
     return stats
 
 
+# ---------------------------------------------------------------------------
+# Tercera velocidad (decisiones políticas): BOE y Consejo de Ministros.
+# Anclaje a SECCIÓN por ministerio proponente (no a servicio/DG): el texto no
+# da el servicio. Sin checks contables (son señal, no contabilidad).
+# ---------------------------------------------------------------------------
+
+
+def _leer_seeds_seccion() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Seed PGE de secciones + registro histórico, para el anclaje por ministerio."""
+    seccion_servicio = pd.read_csv(
+        SEEDS_DIR / "dim_seccion_servicio.csv",
+        dtype={"seccion_cod": str, "servicio_cod": str},
+    )
+    return seccion_servicio, load_historico()
+
+
+# Columnas (y orden) del INSERT en fact_boe_disposiciones: canónicas + anclaje.
+_BOE_INSERT_COLS = [
+    "identificador",
+    "fuente",
+    "periodo",
+    "ejercicio",
+    "fecha",
+    "seccion_boe",
+    "departamento",
+    "tipo_disposicion",
+    "titulo",
+    "bdns_id",
+    "importe",
+    "importe_confianza",
+    "seccion_cod",
+    "anclaje_tipo",
+    "anclaje_senal",
+    "url_oficial",
+    "texto_bruto",
+    "fecha_captura",
+]
+
+# Columnas (y orden) del INSERT en fact_acuerdos_cdm: canónicas + anclaje.
+_CDM_INSERT_COLS = [
+    "acuerdo_id",
+    "fuente",
+    "periodo",
+    "ejercicio",
+    "fecha",
+    "ministerio",
+    "tipo_acuerdo",
+    "descripcion",
+    "importe",
+    "importe_confianza",
+    "seccion_cod",
+    "anclaje_tipo",
+    "anclaje_senal",
+    "vintage",
+    "url_oficial",
+    "texto_bruto",
+    "fecha_captura",
+]
+
+
+def _ensure_anclaje_seccion(anclado: pd.DataFrame, fuente: str) -> None:
+    faltan = [c for c in ANCLAJE_SECCION_COLUMNS if c not in anclado.columns]
+    if faltan:
+        raise ValueError(
+            f"Lote {fuente} sin anclar (faltan {faltan}); pasa por anclar_por_ministerio antes."
+        )
+
+
+def load_boe(con: duckdb.DuckDBPyConnection, anclado: pd.DataFrame) -> int:
+    """Carga un lote BOE anclado: upsert idempotente por ``identificador``.
+
+    ``anclado`` = salida de ``boe.parse_capture_dir`` (validada) tras anclar por
+    ministerio a sección. Se borra cada disposición presente en el lote y se
+    reinserta: recargar el mismo raw es idempotente (CLAUDE.md §2). Sin checks
+    contables: es señal, no contabilidad (CLAUDE.md §3).
+    """
+    _ensure_anclaje_seccion(anclado, "BOE")
+    if anclado.empty:
+        return 0
+    hechos = anclado.assign(ejercicio=anclado["periodo"].str.slice(0, 4).astype(int))
+    con.execute("BEGIN")
+    try:
+        for periodo in sorted(hechos["periodo"].unique()):
+            _upsert_dim_periodo(con, str(periodo))
+        con.register("_boe", hechos)
+        con.execute(
+            "DELETE FROM fact_boe_disposiciones "
+            "WHERE identificador IN (SELECT identificador FROM _boe)"
+        )
+        cols = ", ".join(_BOE_INSERT_COLS)
+        con.execute(f"INSERT INTO fact_boe_disposiciones SELECT {cols} FROM _boe")
+        con.unregister("_boe")
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+    return len(hechos)
+
+
+def load_acuerdos_cdm(con: duckdb.DuckDBPyConnection, anclado: pd.DataFrame) -> int:
+    """Carga un lote del Consejo anclado: REEMPLAZA el bloque de cada fecha.
+
+    La clave ``acuerdo_id`` es sintética (``<fecha>#<índice>``): reparsear una
+    referencia que cambió de nº de acuerdos no debe dejar filas zombis, así que
+    se borra el bloque completo de cada fecha presente y se reinserta
+    (idempotente, docs/consejo_ministros_estructura.md §7-8). Sin checks
+    contables: es señal, no contabilidad.
+    """
+    _ensure_anclaje_seccion(anclado, "Consejo de Ministros")
+    if anclado.empty:
+        return 0
+    hechos = anclado.assign(ejercicio=anclado["periodo"].str.slice(0, 4).astype(int))
+    con.execute("BEGIN")
+    try:
+        for periodo in sorted(hechos["periodo"].unique()):
+            _upsert_dim_periodo(con, str(periodo))
+        con.register("_cdm", hechos)
+        con.execute(
+            "DELETE FROM fact_acuerdos_cdm WHERE fecha IN (SELECT DISTINCT fecha FROM _cdm)"
+        )
+        cols = ", ".join(_CDM_INSERT_COLS)
+        con.execute(f"INSERT INTO fact_acuerdos_cdm SELECT {cols} FROM _cdm")
+        con.unregister("_cdm")
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+    return len(hechos)
+
+
+def _cargar_raw_boe(
+    con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
+) -> dict[str, int]:
+    """Parsea+ancla+carga cada captura BOE, ascendente (la más reciente gana)."""
+    if not capturas:
+        return {}
+    seccion_servicio, historico = _leer_seeds_seccion()
+    stats: dict[str, int] = {}
+    for captura in capturas:
+        disposiciones = boe_parser.parse_capture_dir(raw_dir / "boe" / captura)
+        anclado = anclar_por_ministerio(
+            disposiciones, seccion_servicio, historico, columna_ministerio="departamento"
+        )
+        stats[f"boe@{captura}"] = load_boe(con, anclado)
+    return stats
+
+
+def _cargar_raw_cdm(
+    con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
+) -> dict[str, int]:
+    """Parsea+ancla+carga cada captura del Consejo, ascendente."""
+    if not capturas:
+        return {}
+    seccion_servicio, historico = _leer_seeds_seccion()
+    stats: dict[str, int] = {}
+    for captura in capturas:
+        acuerdos = cdm_parser.parse_capture_dir(raw_dir / "consejo_ministros" / captura)
+        anclado = anclar_por_ministerio(
+            acuerdos, seccion_servicio, historico, columna_ministerio="ministerio"
+        )
+        stats[f"cdm@{captura}"] = load_acuerdos_cdm(con, anclado)
+    return stats
+
+
 def _cargar_raw(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, periodos: list[str]
 ) -> dict[str, int]:
@@ -566,6 +735,8 @@ def build(db_path: Path, raw_dir: Path) -> dict[str, int]:
         stats = _cargar_raw(con, raw_dir, discover_periodos(raw_dir))
         stats.update(_cargar_raw_placsp(con, raw_dir, discover_capturas(raw_dir)))
         stats.update(_cargar_raw_bdns(con, raw_dir, bdns_parser.discover_capturas(raw_dir)))
+        stats.update(_cargar_raw_boe(con, raw_dir, boe_parser.discover_capturas(raw_dir)))
+        stats.update(_cargar_raw_cdm(con, raw_dir, cdm_parser.discover_capturas(raw_dir)))
         return stats
 
 
@@ -594,4 +765,12 @@ def update(db_path: Path, raw_dir: Path) -> dict[str, int]:
             con, "fact_subvenciones", bdns_parser.discover_capturas(raw_dir)
         )
         stats.update(_cargar_raw_bdns(con, raw_dir, bdns_pendientes))
+        boe_pendientes = _capturas_pendientes(
+            con, "fact_boe_disposiciones", boe_parser.discover_capturas(raw_dir)
+        )
+        stats.update(_cargar_raw_boe(con, raw_dir, boe_pendientes))
+        cdm_pendientes = _capturas_pendientes(
+            con, "fact_acuerdos_cdm", cdm_parser.discover_capturas(raw_dir)
+        )
+        stats.update(_cargar_raw_cdm(con, raw_dir, cdm_pendientes))
         return stats

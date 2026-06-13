@@ -35,6 +35,20 @@ anclaje y la señal que lo determinó (auditable; nada se descarta):
 Vigencia temporal: la fecha de referencia es la del compromiso jurídico
 (``fecha_adjudicacion`` en PLACSP, ``fecha_concesion`` en BDNS); las versiones
 SCD2 de ``dim_organica`` se filtran por esa fecha y el crosswalk por su ejercicio.
+
+La tercera velocidad (BOE y Consejo de Ministros — decisiones políticas) usa el
+MISMO motor de denominaciones pero ancla a **nivel de sección**, no de
+servicio/DG (``AncladorSeccion``): esas fuentes solo dan el ministerio
+proponente como texto y NO se fuerza un servicio que el texto no da. Tipo
+propio:
+
+- ``seccion``: la denominación del ministerio/departamento resuelve a una
+  sección presupuestaria — del seed PGE del ejercicio o, por vigencia, del
+  registro histórico de secciones (denominaciones anteriores a la última
+  remodelación, RD 829/2023). Señal: ``ministerio_denominacion``.
+  ``sin_anclar`` distingue ``ministerio_no_mapeable`` (hay texto pero no
+  resuelve) de ``sin_ministerio`` (no hay texto); lo no estatal (CCAA, local,
+  universidades) queda ``fuera_perimetro``. Nada se descarta.
 """
 
 from __future__ import annotations
@@ -49,12 +63,15 @@ from gasto_estado.transform.text import normalize as _norm
 
 # Tipos de anclaje (enum cerrado, columna anclaje_tipo).
 ANCLA_SERVICIO = "servicio"
+# Anclaje a nivel de sección (BOE/CdM: el texto no da el servicio).
+ANCLA_SECCION = "seccion"
 ANCLA_ORGANICA_SIN_SERVICIO = "organica_sin_servicio"
 ANCLA_FUERA_PERIMETRO = "fuera_perimetro"
 ANCLA_SIN_ANCLAR = "sin_anclar"
 
 ANCLAJE_TIPOS = (
     ANCLA_SERVICIO,
+    ANCLA_SECCION,
     ANCLA_ORGANICA_SIN_SERVICIO,
     ANCLA_FUERA_PERIMETRO,
     ANCLA_SIN_ANCLAR,
@@ -72,6 +89,12 @@ SENAL_ENTIDAD_INSTRUMENTAL = "entidad_instrumental"
 # Señales propias de la resolución por denominación (BDNS, sin DIR3 directo).
 SENAL_NO_ESTATAL = "no_estatal"
 SENAL_ORGANO_NO_RESUELTO = "organo_no_resuelto"
+# Señales del anclaje a sección por ministerio proponente (BOE/CdM).
+SENAL_MINISTERIO_DENOMINACION = "ministerio_denominacion"
+SENAL_MINISTERIO_NO_MAPEABLE = "ministerio_no_mapeable"
+SENAL_MINISTERIO_AMBIGUO = "ministerio_ambiguo"
+SENAL_SIN_MINISTERIO = "sin_ministerio"
+SENAL_DEPARTAMENTO_NO_AGE = "departamento_no_age"
 
 # Tipo de entidad DIR3 cuyo gasto SÍ vive en los servicios presupuestarios AGE
 # (estructura ministerial). Cualquier otro tipo informado = presupuesto propio.
@@ -116,6 +139,11 @@ _STOPWORDS = frozenset({"de", "del", "la", "las", "los", "el", "y", "e", "para",
 
 def _tokens(norm_text: str) -> frozenset[str]:
     return frozenset(t for t in norm_text.split() if t not in _STOPWORDS)
+
+
+def _es_nulo(valor: object) -> bool:
+    """Nulo escalar (None o NaN float), sin chocar con el tipado de ``pd.isna``."""
+    return valor is None or (isinstance(valor, float) and pd.isna(valor))
 
 
 class Anclador:
@@ -441,3 +469,135 @@ def anclaje_stats(df: pd.DataFrame, unidad_col: str) -> dict[str, float]:
         "unidades_total": float(total),
         **{f"{tipo}_pct": float(conteo.get(tipo, 0)) / total * 100 for tipo in ANCLAJE_TIPOS},
     }
+
+
+# ---------------------------------------------------------------------------
+# Anclaje a SECCIÓN por ministerio proponente (BOE / Consejo de Ministros)
+# ---------------------------------------------------------------------------
+
+# Columnas del anclaje a nivel de sección (sin servicio ni DIR3: el texto de la
+# tercera velocidad no los da y no se inventan, CLAUDE.md §3).
+ANCLAJE_SECCION_COLUMNS = ["seccion_cod", "anclaje_tipo", "anclaje_senal"]
+
+# Departamentos del BOE fuera del perímetro AGE (sobre texto normalizado).
+_NO_AGE_RE = re.compile(
+    r"comunidad autonoma|comunitat valenciana|comunidad foral|administracion local"
+    r"|universidades|otros poderes adjudicadores|otros entes|ciudad de (ceuta|melilla)"
+)
+
+
+class AncladorSeccion:
+    """Resuelve ``ministerio proponente (texto)`` → sección presupuestaria.
+
+    Índice: denominaciones de sección del seed PGE (``dim_seccion_servicio``)
+    más, por vigencia, las denominaciones del registro histórico de secciones
+    (``historico_secciones.csv``, origen y destino de cada arista). La
+    comparación es por CONJUNTO de tokens significativos descontando el token
+    "ministerio": cubre tanto la forma oficial del BOE ("MINISTERIO DE
+    HACIENDA") como la forma corta de las referencias del Consejo ("Hacienda",
+    "Para la Transición Ecológica y el Reto Demográfico").
+
+    Vigencia: el índice se construye POR EJERCICIO; para un registro de un
+    ejercicio sin estructura propia indexada se usa la del último ejercicio
+    indexado anterior (o, en su defecto, la primera posterior) — mejor anclar
+    contra la estructura más cercana que perder la señal.
+    """
+
+    def __init__(
+        self, dim_seccion_servicio: pd.DataFrame, historico: pd.DataFrame | None = None
+    ) -> None:
+        indice: dict[int, dict[frozenset[str], set[str]]] = {}
+
+        def añade(ejercicio: int, denominacion: object, seccion: object) -> None:
+            clave = _tokens_ministerio(denominacion)
+            if not clave:
+                return
+            indice.setdefault(ejercicio, {}).setdefault(clave, set()).add(str(seccion))
+
+        secciones = dim_seccion_servicio[
+            ["ejercicio", "seccion_cod", "seccion_denominacion"]
+        ].drop_duplicates()
+        for _, fila in secciones.iterrows():
+            añade(int(fila["ejercicio"]), fila["seccion_denominacion"], fila["seccion_cod"])
+
+        if historico is not None:
+            for _, fila in historico.iterrows():
+                if not pd.isna(fila.get("seccion_origen")):
+                    añade(
+                        int(fila["ejercicio_origen"]),
+                        fila["denominacion_origen"],
+                        fila["seccion_origen"],
+                    )
+                if not pd.isna(fila.get("seccion_destino")):
+                    añade(
+                        int(fila["ejercicio_destino"]),
+                        fila["denominacion_destino"],
+                        fila["seccion_destino"],
+                    )
+        self._indice = indice
+        self._ejercicios = sorted(indice)
+
+    def _estructura(self, ejercicio: int) -> dict[frozenset[str], set[str]]:
+        """Estructura del ejercicio: la propia, la última anterior o la primera."""
+        if not self._ejercicios:
+            return {}
+        anteriores = [e for e in self._ejercicios if e <= ejercicio]
+        elegido = anteriores[-1] if anteriores else self._ejercicios[0]
+        return self._indice[elegido]
+
+    def anclar_ministerio(self, ministerio: object, ejercicio: int) -> dict[str, object]:
+        """Columnas ANCLAJE_SECCION_COLUMNS para un ministerio en texto libre."""
+
+        def out(tipo: str, senal: str, seccion: str | None = None) -> dict[str, object]:
+            return {"seccion_cod": seccion, "anclaje_tipo": tipo, "anclaje_senal": senal}
+
+        texto = "" if _es_nulo(ministerio) else str(ministerio)
+        norm = _norm(texto)
+        if not norm:
+            return out(ANCLA_SIN_ANCLAR, SENAL_SIN_MINISTERIO)
+        if _NO_AGE_RE.search(norm):
+            return out(ANCLA_FUERA_PERIMETRO, SENAL_DEPARTAMENTO_NO_AGE)
+        secciones = self._estructura(ejercicio).get(_tokens_ministerio(texto), set())
+        if len(secciones) == 1:
+            return out(ANCLA_SECCION, SENAL_MINISTERIO_DENOMINACION, next(iter(secciones)))
+        if secciones:
+            # Misma denominación en varias secciones (no observado; defensivo):
+            # mejor no anclar que anclar mal.
+            return out(ANCLA_SIN_ANCLAR, SENAL_MINISTERIO_AMBIGUO)
+        return out(ANCLA_SIN_ANCLAR, SENAL_MINISTERIO_NO_MAPEABLE)
+
+
+def _tokens_ministerio(denominacion: object) -> frozenset[str]:
+    """Tokens significativos de una denominación ministerial, sin "ministerio".
+
+    Descontar el token "ministerio" (además de las stopwords) iguala la forma
+    oficial ("MINISTERIO DE HACIENDA") con la corta del Consejo ("Hacienda").
+    """
+    if _es_nulo(denominacion):
+        return frozenset()
+    return _tokens(_norm(str(denominacion))) - {"ministerio"}
+
+
+def anclar_por_ministerio(
+    df: pd.DataFrame,
+    dim_seccion_servicio: pd.DataFrame,
+    historico: pd.DataFrame | None = None,
+    *,
+    columna_ministerio: str,
+) -> pd.DataFrame:
+    """Añade a un lote BOE/CdM las columnas de anclaje a sección.
+
+    ``df`` debe traer ``periodo`` (YYYY-MM: fija el ejercicio de vigencia) y la
+    columna de texto del ministerio proponente (``columna_ministerio``). Lo no
+    resoluble queda etiquetado y contado, nunca descartado.
+    """
+    anclador = AncladorSeccion(dim_seccion_servicio, historico)
+    ejercicios = df["periodo"].str.slice(0, 4).astype(int)
+    anclajes = [
+        anclador.anclar_ministerio(ministerio, ejercicio)
+        for ministerio, ejercicio in zip(df[columna_ministerio], ejercicios, strict=True)
+    ]
+    resultado = df.copy()
+    for col in ANCLAJE_SECCION_COLUMNS:
+        resultado[col] = pd.Series([a[col] for a in anclajes], index=resultado.index)
+    return resultado

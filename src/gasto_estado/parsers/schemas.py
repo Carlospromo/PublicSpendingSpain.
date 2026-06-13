@@ -156,6 +156,89 @@ bdns_concesion_schema = pa.DataFrameSchema(
     coerce=False,
 )
 
+# ---------------------------------------------------------------------------
+# BOE — disposiciones de interés del sumario diario (tercera velocidad)
+#
+# GRANO: una fila por disposición de interés (clave natural = identificador
+# BOE). NO es contabilidad (CLAUDE.md §3): señal de "decisiones políticas". El
+# importe se extrae del texto con un grado de confianza; si no hay cifra
+# parseable queda nulo y el texto bruto se conserva (CLAUDE.md §9). El anclaje
+# (a SECCIÓN, no a servicio) lo añade transform/anclaje_organico.py.
+# ---------------------------------------------------------------------------
+
+_TIPO_DISPOSICION = [
+    "convocatoria_subvencion",
+    "subvencion_directa",
+    "credito_extraordinario",
+    "suplemento_credito",
+    "transferencia_credito",
+    "modificacion_credito",
+    "otro",
+]
+_IMPORTE_CONFIANZA = ["alta", "media", "sin_importe"]
+
+boe_disposicion_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("boe_sumario")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        "identificador": pa.Column(str, unique=True),  # BOE-A/B-AAAA-N
+        "fecha": pa.Column("object"),  # datetime.date
+        # Sección del BOE (1, 3, 5B…): la del boletín, NO la presupuestaria.
+        "seccion_boe": pa.Column(str, nullable=True),
+        "departamento": pa.Column(str, nullable=True),  # ministerio proponente (texto)
+        "tipo_disposicion": pa.Column(str, pa.Check.isin(_TIPO_DISPOSICION)),
+        "titulo": pa.Column(str, nullable=True),
+        "bdns_id": pa.Column(str, nullable=True),  # puente con BDNS (extractos SNPS)
+        "importe": pa.Column(float, nullable=True),
+        "importe_confianza": pa.Column(str, pa.Check.isin(_IMPORTE_CONFIANZA)),
+        "url_oficial": pa.Column(str, nullable=True),
+        "texto_bruto": pa.Column(str, nullable=True),  # conservado para revisión
+    },
+    strict=True,
+    coerce=False,
+)
+
+# ---------------------------------------------------------------------------
+# Consejo de Ministros — acuerdos del SUMARIO de la referencia (tercera velocidad)
+#
+# GRANO: una fila por acuerdo del SUMARIO. Clave natural sintética
+# acuerdo_id = "<fecha>#<índice>" (la referencia no da id estable por acuerdo).
+# Misma filosofía de señal que el BOE: importe con confianza, texto bruto
+# conservado, anclaje a SECCIÓN por ministerio proponente.
+# ---------------------------------------------------------------------------
+
+_TIPO_ACUERDO = [
+    "autorizacion_gasto",
+    "subvencion",
+    "transferencia_credito",
+    "credito_suplemento",
+    "convenio",
+    "norma",
+    "personal",
+    "otro",
+]
+
+cdm_acuerdo_schema = pa.DataFrameSchema(
+    {
+        "periodo": pa.Column(str, pa.Check.str_matches(r"^\d{4}-\d{2}$")),
+        "fuente": pa.Column(str, pa.Check.equal_to("consejo_ministros")),
+        "fecha_captura": pa.Column("object"),  # datetime.date
+        "acuerdo_id": pa.Column(str, unique=True),  # "<fecha>#<índice>"
+        "fecha": pa.Column("object"),  # datetime.date
+        "ministerio": pa.Column(str, nullable=True),  # proponente (forma corta del h3)
+        "tipo_acuerdo": pa.Column(str, pa.Check.isin(_TIPO_ACUERDO)),
+        "descripcion": pa.Column(str, nullable=True),
+        "importe": pa.Column(float, nullable=True),
+        "importe_confianza": pa.Column(str, pa.Check.isin(_IMPORTE_CONFIANZA)),
+        "vintage": pa.Column(str, nullable=True),
+        "url_oficial": pa.Column(str, nullable=True),
+        "texto_bruto": pa.Column(str, nullable=True),
+    },
+    strict=True,
+    coerce=False,
+)
+
 # Estados oficiales de una unidad DIR3 (hoja "Catálogos de clasificación" del
 # fichero oficial): Vigente, Extinguido, Anulado, Transitorio.
 DIR3_ESTADOS = ("V", "E", "A", "T")

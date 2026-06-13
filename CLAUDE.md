@@ -234,7 +234,7 @@ Toda carga DEBE pasar estos checks (en `quality/checks.py`). Si fallan: parar y 
 - [x] Fase 2 — Extractor + parser IGAE mensual (Anexo I)
 - [x] Fase 3 — Warehouse, carga idempotente y validaciones contables
 - [x] Fase 4 — Capa de alta frecuencia (PLACSP, BDNS, BOE, CdM)
-- [ ] Fase 5 — Métricas y alertas analíticas
+- [x] Fase 5 — Métricas y alertas analíticas
 - [ ] Fase 6 — API de exposición (FastAPI) para el frontal
 - [ ] Fase 7 — Automatización CI/CD (git-scraping mensual + semanal)
 - [ ] Fase 8 — Prototipo de dashboard y contrato de datos para el frontal web

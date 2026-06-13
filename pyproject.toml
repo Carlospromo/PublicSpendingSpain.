@@ -68,6 +68,11 @@ select = [
     "SIM", # flake8-simplify
 ]
 
+[tool.ruff.lint.flake8-bugbear]
+# Patrón idiomático de FastAPI: las dependencias/parámetros se declaran como
+# valor por defecto (Depends/Query). No es el antipatrón mutable que B008 vigila.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
 [tool.mypy]
 python_version = "3.12"
 files = ["src"]

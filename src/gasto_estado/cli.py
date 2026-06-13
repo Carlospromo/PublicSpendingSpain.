@@ -209,5 +209,18 @@ def api(
     host: str = typer.Option("127.0.0.1", "--host", help="Host de escucha del servidor."),
     port: int = typer.Option(8000, "--port", help="Puerto de escucha del servidor."),
 ) -> None:
-    """Levanta la API local (FastAPI) para el frontal web."""
-    typer.echo(f"api ({host}:{port}): no implementado — Fase 6")
+    """Levanta la API local (FastAPI, solo lectura) para el frontal web."""
+    _bootstrap_repo_root()
+    import uvicorn
+    from config import settings
+
+    from gasto_estado.api.app import create_app
+
+    if not settings.WAREHOUSE_PATH.exists():
+        typer.echo(
+            "aviso: no existe el warehouse; la API arrancará pero /salud lo reflejará "
+            "y los endpoints de datos darán 503. Ejecuta 'gasto-estado build' primero.",
+            err=True,
+        )
+    typer.echo(f"api: sirviendo en http://{host}:{port} (read-only; docs en /docs)")
+    uvicorn.run(create_app(), host=host, port=port)

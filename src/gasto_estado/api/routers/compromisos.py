@@ -1,51 +1,58 @@
 """Router de compromisos jurídicos (PLACSP + BDNS).
 
 Volúmenes y concentración por órgano/servicio/DG y ventana temporal. La tasa y
-fiabilidad de anclaje viajan en ``cobertura_anclaje`` de cada respuesta (no se
-oculta qué fracción del importe no se ha podido atribuir).
+fiabilidad de anclaje viajan en ``meta.cobertura_anclaje`` de cada respuesta (no
+se oculta qué fracción del importe no se ha podido atribuir).
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 import duckdb
 from fastapi import APIRouter, Depends, Query
 
 from gasto_estado.analytics import metrics
-from gasto_estado.api.deps import get_db
-from gasto_estado.api.models import MetricResponse
+from gasto_estado.api.deps import get_db, paginacion_params
+from gasto_estado.api.models import Envelope
+from gasto_estado.api.respuestas import envolver_metrica
 
 router = APIRouter(tags=["compromisos (PLACSP/BDNS)"])
 
+MetricEnvelope = Envelope[list[dict[str, Any]]]
+
 
 @router.get(
-    "/contratos/volumen", response_model=MetricResponse, summary="Importe adjudicado (PLACSP)"
+    "/contratos/volumen", response_model=MetricEnvelope, summary="Importe adjudicado (PLACSP)"
 )
 def contratos_volumen(
     periodo: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     ejercicio: int | None = Query(None, ge=2000),
     nivel: str = Query("seccion"),
+    pag: tuple[int, int] = Depends(paginacion_params),
     con: duckdb.DuckDBPyConnection = Depends(get_db),
-) -> MetricResponse:
+) -> MetricEnvelope:
     res = metrics.volumen_adjudicacion(con, periodo=periodo, ejercicio=ejercicio, nivel=nivel)
-    return MetricResponse(**res.to_dict())
+    return envolver_metrica(res, pagina=pag[0], tamano=pag[1])
 
 
 @router.get(
-    "/subvenciones/volumen", response_model=MetricResponse, summary="Importe concedido (BDNS)"
+    "/subvenciones/volumen", response_model=MetricEnvelope, summary="Importe concedido (BDNS)"
 )
 def subvenciones_volumen(
     periodo: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     ejercicio: int | None = Query(None, ge=2000),
     nivel: str = Query("seccion"),
+    pag: tuple[int, int] = Depends(paginacion_params),
     con: duckdb.DuckDBPyConnection = Depends(get_db),
-) -> MetricResponse:
+) -> MetricEnvelope:
     res = metrics.volumen_concesion(con, periodo=periodo, ejercicio=ejercicio, nivel=nivel)
-    return MetricResponse(**res.to_dict())
+    return envolver_metrica(res, pagina=pag[0], tamano=pag[1])
 
 
 @router.get(
     "/contratos/concentracion",
-    response_model=MetricResponse,
+    response_model=MetricEnvelope,
     summary="Concentración de adjudicatarios (top-N, HHI)",
 )
 def concentracion(
@@ -53,9 +60,10 @@ def concentracion(
     periodo: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
     nivel: str = Query("servicio"),
     top_n: int = Query(5, ge=1, le=50),
+    pag: tuple[int, int] = Depends(paginacion_params),
     con: duckdb.DuckDBPyConnection = Depends(get_db),
-) -> MetricResponse:
+) -> MetricEnvelope:
     res = metrics.concentracion_adjudicatarios(
         con, nivel=nivel, ejercicio=ejercicio, periodo=periodo, top_n=top_n
     )
-    return MetricResponse(**res.to_dict())
+    return envolver_metrica(res, pagina=pag[0], tamano=pag[1])

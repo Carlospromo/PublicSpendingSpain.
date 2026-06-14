@@ -15,8 +15,21 @@ from collections.abc import Iterator
 import duckdb
 from fastapi import HTTPException, Query, Request
 
+from gasto_estado.api.respuestas import TAMANO_DEFECTO, TAMANO_MAXIMO
+
 # Periodo presupuestario YYYY-MM (validado en la query → 422 si no casa).
 PeriodoQuery = Query(..., pattern=r"^\d{4}-\d{2}$", description="Periodo mensual YYYY-MM")
+
+
+def paginacion_params(
+    pagina: int = Query(1, ge=1, description="Página (1-indexada)."),
+    tamano: int = Query(
+        TAMANO_DEFECTO, ge=1, le=TAMANO_MAXIMO,
+        description=f"Tamaño de página (máx. {TAMANO_MAXIMO}).",
+    ),
+) -> tuple[int, int]:
+    """Parámetros de paginación uniformes para los endpoints de colección."""
+    return pagina, tamano
 
 
 def get_db(request: Request) -> Iterator[duckdb.DuckDBPyConnection]:

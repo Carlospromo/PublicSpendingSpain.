@@ -47,9 +47,14 @@ def salud(request: Request) -> Envelope[SaludModel]:
     summary="Frescura por fuente (último periodo/captura cargado)",
 )
 def frescura(
+    request: Request,
     pag: tuple[int, int] = Depends(paginacion_params),
     con: duckdb.DuckDBPyConnection = Depends(get_db),
 ) -> Envelope[list[FrescuraFuenteModel]]:
     pagina, tamano = pag
-    items = [FrescuraFuenteModel(**f) for f in estructura.frescura_fuentes(con)]
+    warehouse_path = getattr(request.app.state, "warehouse_path", None)
+    items = [
+        FrescuraFuenteModel(**f)
+        for f in estructura.frescura_fuentes(con, warehouse_path=warehouse_path)
+    ]
     return envolver_coleccion(items, pagina=pagina, tamano=tamano)

@@ -205,6 +205,45 @@ def check(
 
 
 @app.command()
+def materialize(
+    grupo: str = typer.Argument(
+        ...,
+        help="Grupo de assets: mensual o alta_frecuencia.",
+    ),
+    particion: str | None = typer.Option(
+        None,
+        "--particion",
+        help=(
+            "Clave de partición (YYYY-MM-01 para mensual; YYYY-MM-DD para alta "
+            "frecuencia). Por defecto, la del periodo en curso."
+        ),
+    ),
+    no_descargar: bool = typer.Option(
+        False,
+        "--no-descargar",
+        help="Omitir la descarga de raw nuevo (útil si el raw ya está en caché).",
+    ),
+) -> None:
+    """Materializa un grupo de assets Dagster (dimensiones → hechos → checks/analítica).
+
+    No requiere servidor Dagster permanente: la ejecución ocurre en proceso y termina.
+    Equivalente en CI a invocar dagster.materialize() sobre el subgrafo del grupo.
+    """
+    _bootstrap_repo_root()
+    from gasto_estado.orchestration.run import GRUPOS
+    from gasto_estado.orchestration.run import materializar as _materializar
+
+    if grupo not in GRUPOS:
+        typer.echo(f"error: grupo desconocido {grupo!r}; usa {list(GRUPOS)}.", err=True)
+        raise typer.Exit(code=1)
+    exito = _materializar(grupo, particion=particion, descargar=not no_descargar)
+    if not exito:
+        typer.echo(f"materialize {grupo}: falló (ver log de Dagster arriba).", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"materialize {grupo}: OK")
+
+
+@app.command()
 def api(
     host: str = typer.Option("127.0.0.1", "--host", help="Host de escucha del servidor."),
     port: int = typer.Option(8000, "--port", help="Puerto de escucha del servidor."),

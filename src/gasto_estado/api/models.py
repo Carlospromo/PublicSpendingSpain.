@@ -227,6 +227,7 @@ class FrescuraFuenteModel(BaseModel):
     n_filas: int
     ultima_actualizacion: str | None = None
     periodo_cubierto: list[str] | None = None
+    materializado_en: str | None = None
 
 
 class SaludModel(BaseModel):

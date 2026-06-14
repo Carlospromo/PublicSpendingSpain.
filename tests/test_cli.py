@@ -6,7 +6,7 @@ from gasto_estado.cli import app
 
 runner = CliRunner()
 
-COMANDOS = ("extract", "build", "update", "check", "api")
+COMANDOS = ("extract", "build", "update", "check", "api", "materialize")
 
 
 def test_cli_help() -> None:
@@ -20,6 +20,12 @@ def test_cada_comando_tiene_help() -> None:
     for comando in COMANDOS:
         result = runner.invoke(app, [comando, "--help"])
         assert result.exit_code == 0, f"--help falla para {comando}"
+
+
+def test_materialize_grupo_invalido() -> None:
+    result = runner.invoke(app, ["materialize", "no_existe"])
+    assert result.exit_code == 1
+    assert "grupo desconocido" in result.output
 
 
 def test_extract_boe_y_consejo_estan_conectados() -> None:

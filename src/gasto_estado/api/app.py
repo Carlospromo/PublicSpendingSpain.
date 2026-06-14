@@ -18,12 +18,14 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 import duckdb
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
+from gasto_estado.api.errores import registrar_manejadores
+from gasto_estado.api.models import ErrorRespuesta
 from gasto_estado.api.routers import (
     alertas,
     compromisos,
@@ -33,6 +35,17 @@ from gasto_estado.api.routers import (
     estructura,
     salud,
 )
+
+API_VERSION = "v1"
+PREFIJO = f"/{API_VERSION}"
+
+# Respuestas de error documentadas en OpenAPI para toda la superficie (cuerpo
+# uniforme; ver api/errores.py y API.md).
+_RESPUESTAS_ERROR: dict[int | str, dict[str, Any]] = {
+    404: {"model": ErrorRespuesta, "description": "Recurso no encontrado."},
+    422: {"model": ErrorRespuesta, "description": "Parámetros inválidos."},
+    503: {"model": ErrorRespuesta, "description": "Warehouse no disponible."},
+}
 
 DESCRIPCION = (
     "API de solo lectura del gasto del Estado español a nivel de servicio "
@@ -74,19 +87,21 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
         allow_methods=["GET"],
         allow_headers=["*"],
     )
+    registrar_manejadores(app)
 
-    @app.exception_handler(ValueError)
-    async def _value_error(_: Request, exc: ValueError) -> JSONResponse:
-        # Las funciones puras validan su entrada con ValueError (nivel/periodo
-        # inválido): se traduce a 422, no a un 500 opaco.
-        return JSONResponse(status_code=422, content={"detail": str(exc)})
-
+    # Toda la superficie vive bajo /v1: lo incompatible irá a /v2 (ver API.md).
     for modulo in (salud, estructura, ejecucion, compromisos, decisiones, cruces, alertas):
-        app.include_router(modulo.router)
+        app.include_router(modulo.router, prefix=PREFIJO, responses=_RESPUESTAS_ERROR)
 
-    @app.get("/", tags=["salud"], summary="Raíz: enlaces a la documentación")
+    @app.get("/", tags=["meta"], summary="Raíz: versión y enlaces a la documentación")
     def raiz() -> dict[str, str]:
-        return {"nombre": "gasto-estado API", "docs": "/docs", "openapi": "/openapi.json"}
+        return {
+            "nombre": "gasto-estado API",
+            "version": API_VERSION,
+            "base": PREFIJO,
+            "docs": "/docs",
+            "openapi": "/openapi.json",
+        }
 
     return app
 

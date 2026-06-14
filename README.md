@@ -62,15 +62,17 @@ uv run ruff check . && uv run mypy src/                # calidad
 uv run gasto-estado build                 # asegúrate de tener el warehouse
 uv run gasto-estado api --port 8000       # FastAPI de solo lectura
 # Documentación interactiva (OpenAPI): http://127.0.0.1:8000/docs
-# Estado/frescura para el frontal:      http://127.0.0.1:8000/salud
+# Estado/frescura para el frontal:      http://127.0.0.1:8000/v1/salud
 ```
 
 La API es una capa de exposición fina: invoca las funciones puras de
 `analytics/metrics.py` y `analytics/alerts.py` y propaga sus metadatos de
 fiabilidad (naturaleza, confianza, cobertura de anclaje, advertencias, frescura)
 sin despojarlos. Sirve el warehouse con una conexión DuckDB `read_only` (un cursor
-por petición; ver `src/gasto_estado/api/app.py`). El contrato formal y estable es
-trabajo posterior (Prompt 15).
+por petición; ver `src/gasto_estado/api/app.py`). Toda la superficie vive bajo
+`/v1/` con envoltura común `{data, meta}`, paginación y errores uniformes. El
+**contrato v1 está congelado** y documentado en [`docs/API.md`](docs/API.md) — es
+lo que consumirá el frontal.
 
 ## Estructura del repositorio
 

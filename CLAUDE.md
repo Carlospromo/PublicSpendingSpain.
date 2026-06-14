@@ -171,7 +171,18 @@ gasto-estado/
 - API: **FastAPI** (la fase final genera el contrato que consumirá el frontal web).
 - CLI: **typer** (`gasto-estado <comando>`).
 - Calidad de código: `ruff` (lint+format), `mypy` (tipado), `pytest`.
-- CI/CD: GitHub Actions (git-scraping: descarga → parse → validate → commit del dato).
+- Orquestación: **Dagster** (el warehouse se modela como *software-defined assets*:
+  dimensiones → hechos por fuente → validación → analítica, con particiones por
+  periodo/ventana e invalidación en cascada —p. ej. al cambiar el crosswalk
+  servicio↔DIR3—). Un asset es una cáscara fina que invoca la lógica ya probada
+  (extractores/parsers/carga/checks/métricas), no la reimplementa; `analytics/` y
+  la API siguen SIN acoplamiento a scheduler.
+- CI/CD: **GitHub Actions como disparador externo (cron)** que materializa los
+  assets de Dagster dentro del runner (git-scraping: descarga → parse → validate →
+  commit del dato). NO hay servidor Dagster permanente: la materialización ocurre y
+  termina en el runner; un despliegue con servidor queda como opción futura para
+  cuando el frontal lo requiera. La reproducibilidad y la autocontención se
+  mantienen: `gasto-estado build` reconstruye TODO desde cero sin Dagster.
 
 ### Comandos canónicos (mantener actualizados)
 
@@ -236,5 +247,5 @@ Toda carga DEBE pasar estos checks (en `quality/checks.py`). Si fallan: parar y 
 - [x] Fase 4 — Capa de alta frecuencia (PLACSP, BDNS, BOE, CdM)
 - [x] Fase 5 — Métricas y alertas analíticas
 - [x] Fase 6 — API de exposición (FastAPI) para el frontal
-- [ ] Fase 7 — Automatización CI/CD (git-scraping mensual + semanal)
+- [ ] Fase 7 — Orquestación con Dagster (assets) + disparo CI
 - [ ] Fase 8 — Prototipo de dashboard y contrato de datos para el frontal web

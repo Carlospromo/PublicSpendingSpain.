@@ -1,20 +1,73 @@
-# ---------------------------------------------------------------------------
-# monthly.yml — Esqueleto (Fase 0). Sin jobs reales todavía.
-#
-# Pipeline mensual de git-scraping para la verdad contable (IGAE):
-#   - Fuentes: IGAE Ejecución AGE (Anexo I), IGAE Organismos, IGAE CIGAE
-#     (contabilidad nacional), IGAE PMP, y PGE inicial (anual).
-#   - Flujo previsto: extract --source igae --latest → parse → check → load
-#     → commit del dato ("data(igae): add execution YYYY-MM").
-#
-# Cadencia prevista: la IGAE publica ~25-30 días tras el cierre de mes, así
-# que se sondea a diario entre los días 20 y 31 y se sale sin cambios si aún
-# no hay dato nuevo (idempotencia).
-#
-#   on:
-#     schedule:
-#       - cron: "0 7 20-31 * *"   # 07:00 UTC, días 20-31 de cada mes
-#     workflow_dispatch: {}        # ejecución manual para backfill/depuración
-#
-# Se implementará en la Fase 7 (Automatización CI/CD).
-# ---------------------------------------------------------------------------
+name: Materialización mensual (IGAE)
+
+# Disparador real del git-scraping mensual (Fase 7).
+# La IGAE publica el Anexo I ~25-30 días tras el cierre de mes; sondeamos
+# a diario entre los días 20 y 31. La extracción es idempotente: si no hay
+# dato nuevo, sale sin cambios (ni commit ni push).
+
+on:
+  schedule:
+    - cron: "0 7 20-31 * *"  # 07:00 UTC, días 20-31 de cada mes
+  workflow_dispatch:
+    inputs:
+      particion:
+        description: "Partición YYYY-MM-01 (por defecto, mes en curso)"
+        required: false
+        default: ""
+
+jobs:
+  materialize-mensual:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sincronizar entorno
+        run: uv sync --frozen
+
+      - name: Materializar assets mensuales (IGAE)
+        id: materialize
+        run: |
+          PARTICION="${{ github.event.inputs.particion }}"
+          if [ -z "$PARTICION" ]; then
+            uv run gasto-estado materialize mensual
+          else
+            uv run gasto-estado materialize mensual --particion "$PARTICION"
+          fi
+
+      - name: Notificar fallo
+        if: failure()
+        env:
+          GASTO_ESTADO_CREAR_ISSUES: "1"
+        run: |
+          uv run python -c "
+          from gasto_estado.orchestration.notifications import Incidencia, notificar_incidencias
+          notificar_incidencias([Incidencia(
+              fuente='igae_mensual',
+              particion='${{ github.event.inputs.particion }}' or None,
+              tipo_fallo='error_descarga',
+              mensaje_diagnostico='La materialización mensual falló. Revisar los logs del step anterior.',
+          )])
+          "
+
+      - name: Commit de datos si hay cambios
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ -f 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Sin cambios; warehouse ya al día."
+          else
+            PERIODO=$(date +%Y-%m)
+            git commit -m "data(igae): update execution ${PERIODO}"
+            git push
+          fi

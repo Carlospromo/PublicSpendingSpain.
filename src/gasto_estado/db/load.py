@@ -423,7 +423,7 @@ def _leer_seeds_anclaje() -> tuple[pd.DataFrame, pd.DataFrame]:
     return dim_organica, crosswalk
 
 
-def _cargar_raw_placsp(
+def cargar_capturas_placsp(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
 ) -> dict[str, int]:
     """Parsea+ancla+carga cada captura, ascendente (la más reciente gana)."""
@@ -530,7 +530,7 @@ def load_concesiones(con: duckdb.DuckDBPyConnection, anclado: pd.DataFrame) -> i
     return len(hechos)
 
 
-def _cargar_raw_bdns(
+def cargar_capturas_bdns(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
 ) -> dict[str, int]:
     """Parsea+ancla+carga cada captura BDNS, ascendente (la más reciente gana)."""
@@ -676,7 +676,7 @@ def load_acuerdos_cdm(con: duckdb.DuckDBPyConnection, anclado: pd.DataFrame) -> 
     return len(hechos)
 
 
-def _cargar_raw_boe(
+def cargar_capturas_boe(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
 ) -> dict[str, int]:
     """Parsea+ancla+carga cada captura BOE, ascendente (la más reciente gana)."""
@@ -693,7 +693,7 @@ def _cargar_raw_boe(
     return stats
 
 
-def _cargar_raw_cdm(
+def cargar_capturas_cdm(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, capturas: list[str]
 ) -> dict[str, int]:
     """Parsea+ancla+carga cada captura del Consejo, ascendente."""
@@ -710,7 +710,7 @@ def _cargar_raw_cdm(
     return stats
 
 
-def _cargar_raw(
+def cargar_periodos_ejecucion(
     con: duckdb.DuckDBPyConnection, raw_dir: Path, periodos: list[str]
 ) -> dict[str, int]:
     stats: dict[str, int] = {}
@@ -732,11 +732,11 @@ def build(db_path: Path, raw_dir: Path) -> dict[str, int]:
     with connect(db_path) as con:
         init_schema(con)
         load_seeds(con)
-        stats = _cargar_raw(con, raw_dir, discover_periodos(raw_dir))
-        stats.update(_cargar_raw_placsp(con, raw_dir, discover_capturas(raw_dir)))
-        stats.update(_cargar_raw_bdns(con, raw_dir, bdns_parser.discover_capturas(raw_dir)))
-        stats.update(_cargar_raw_boe(con, raw_dir, boe_parser.discover_capturas(raw_dir)))
-        stats.update(_cargar_raw_cdm(con, raw_dir, cdm_parser.discover_capturas(raw_dir)))
+        stats = cargar_periodos_ejecucion(con, raw_dir, discover_periodos(raw_dir))
+        stats.update(cargar_capturas_placsp(con, raw_dir, discover_capturas(raw_dir)))
+        stats.update(cargar_capturas_bdns(con, raw_dir, bdns_parser.discover_capturas(raw_dir)))
+        stats.update(cargar_capturas_boe(con, raw_dir, boe_parser.discover_capturas(raw_dir)))
+        stats.update(cargar_capturas_cdm(con, raw_dir, cdm_parser.discover_capturas(raw_dir)))
         return stats
 
 
@@ -758,19 +758,19 @@ def update(db_path: Path, raw_dir: Path) -> dict[str, int]:
             ).fetchall()
         }
         pendientes = [p for p in discover_periodos(raw_dir) if p not in cargados]
-        stats = _cargar_raw(con, raw_dir, pendientes)
+        stats = cargar_periodos_ejecucion(con, raw_dir, pendientes)
         placsp_pendientes = _capturas_pendientes(con, "fact_contratos", discover_capturas(raw_dir))
-        stats.update(_cargar_raw_placsp(con, raw_dir, placsp_pendientes))
+        stats.update(cargar_capturas_placsp(con, raw_dir, placsp_pendientes))
         bdns_pendientes = _capturas_pendientes(
             con, "fact_subvenciones", bdns_parser.discover_capturas(raw_dir)
         )
-        stats.update(_cargar_raw_bdns(con, raw_dir, bdns_pendientes))
+        stats.update(cargar_capturas_bdns(con, raw_dir, bdns_pendientes))
         boe_pendientes = _capturas_pendientes(
             con, "fact_boe_disposiciones", boe_parser.discover_capturas(raw_dir)
         )
-        stats.update(_cargar_raw_boe(con, raw_dir, boe_pendientes))
+        stats.update(cargar_capturas_boe(con, raw_dir, boe_pendientes))
         cdm_pendientes = _capturas_pendientes(
             con, "fact_acuerdos_cdm", cdm_parser.discover_capturas(raw_dir)
         )
-        stats.update(_cargar_raw_cdm(con, raw_dir, cdm_pendientes))
+        stats.update(cargar_capturas_cdm(con, raw_dir, cdm_pendientes))
         return stats

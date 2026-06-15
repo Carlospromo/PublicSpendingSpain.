@@ -15,6 +15,7 @@ cada servicio (``dg_equivalencia_aproximada``).
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import duckdb
@@ -149,12 +150,22 @@ def catalogo_fuentes(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     ]
 
 
-def frescura_fuentes(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
+def frescura_fuentes(
+    con: duckdb.DuckDBPyConnection,
+    warehouse_path: Path | None = None,
+) -> list[dict[str, Any]]:
     """Por fuente: último periodo/captura cargado y rango cubierto (objetivo 5).
 
     Permite al frontal mostrar "IGAE a abril 2026, PLACSP a anteayer, …" sin
     adivinar. Las fuentes sin datos cargados se reportan vacías, no se omiten.
+    Si se proporciona ``warehouse_path``, enriquece con el timestamp real de
+    materialización Dagster (``materializado_en``) del ledger de frescura.
     """
+    ledger: dict[str, Any] = {}
+    if warehouse_path is not None:
+        from gasto_estado.orchestration import frescura as ledger_mod
+        ledger = ledger_mod.leer(warehouse_path)
+
     velocidades = {f["fuente_cod"]: f for f in catalogo_fuentes(con)}
     out: list[dict[str, Any]] = []
     for fuente, tabla in _FRESCURA_FUENTES:
@@ -166,6 +177,7 @@ def frescura_fuentes(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
         ).fetchone()
         n, ultima, pmin, pmax = (fila if fila else (0, None, None, None))
         meta = velocidades.get(fuente, {})
+        entrada_ledger = ledger.get(fuente, {})
         out.append({
             "fuente_cod": fuente,
             "velocidad": meta.get("velocidad"),
@@ -173,6 +185,7 @@ def frescura_fuentes(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
             "n_filas": int(n or 0),
             "ultima_actualizacion": None if ultima is None else ultima.isoformat(),
             "periodo_cubierto": None if pmin is None else [pmin, pmax],
+            "materializado_en": entrada_ledger.get("materializado_en"),
         })
     return out
 

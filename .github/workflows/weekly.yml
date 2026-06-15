@@ -1,20 +1,72 @@
-# ---------------------------------------------------------------------------
-# weekly.yml — Esqueleto (Fase 0). Sin jobs reales todavía.
-#
-# Pipeline semanal/diario de git-scraping para la capa de alta frecuencia:
-#   - PLACSP (datos abiertos, ATOM/XML CODICE) — diaria
-#   - BDNS / infosubvenciones (API REST)       — diaria
-#   - BOE (sumario diario, API XML)            — diaria
-#   - Consejo de Ministros (La Moncloa, HTML)  — semanal (publica los martes)
-#   - DIR3 (dimensión orgánica, CSV)           — refresco semanal
-#
-# Cadencia prevista: lunes (CLAUDE.md §5); si la capa diaria lo requiere,
-# se desdoblará en un workflow diario aparte en la Fase 7.
-#
-#   on:
-#     schedule:
-#       - cron: "0 6 * * 1"        # 06:00 UTC, lunes
-#     workflow_dispatch: {}        # ejecución manual
-#
-# Se implementará en la Fase 7 (Automatización CI/CD).
-# ---------------------------------------------------------------------------
+name: Materialización alta frecuencia (PLACSP/BDNS/BOE/CdM)
+
+# Disparador real del git-scraping de alta frecuencia (Fase 7).
+# Cubre PLACSP, BDNS, BOE y Consejo de Ministros con cadencia semanal (lunes).
+# La extracción es idempotente: si no hay dato nuevo, sale sin cambios.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # 06:00 UTC, lunes
+  workflow_dispatch:
+    inputs:
+      particion:
+        description: "Partición YYYY-MM-DD (por defecto, hoy)"
+        required: false
+        default: ""
+
+jobs:
+  materialize-alta-frecuencia:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sincronizar entorno
+        run: uv sync --frozen
+
+      - name: Materializar assets de alta frecuencia
+        id: materialize
+        run: |
+          PARTICION="${{ github.event.inputs.particion }}"
+          if [ -z "$PARTICION" ]; then
+            uv run gasto-estado materialize alta_frecuencia
+          else
+            uv run gasto-estado materialize alta_frecuencia --particion "$PARTICION"
+          fi
+
+      - name: Notificar fallo
+        if: failure()
+        env:
+          GASTO_ESTADO_CREAR_ISSUES: "1"
+        run: |
+          uv run python -c "
+          from gasto_estado.orchestration.notifications import Incidencia, notificar_incidencias
+          notificar_incidencias([Incidencia(
+              fuente='alta_frecuencia',
+              particion='${{ github.event.inputs.particion }}' or None,
+              tipo_fallo='error_descarga',
+              mensaje_diagnostico='La materialización de alta frecuencia falló. Revisar los logs del step anterior.',
+          )])
+          "
+
+      - name: Commit de datos si hay cambios
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ -f 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Sin cambios; warehouse ya al día."
+          else
+            FECHA=$(date +%Y-%m-%d)
+            git commit -m "data(alta-frecuencia): update ${FECHA}"
+            git push
+          fi

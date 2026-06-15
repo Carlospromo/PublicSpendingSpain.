@@ -1,0 +1,27 @@
+name: Monitor de salud de fuentes
+
+on:
+  schedule:
+    - cron: "0 8 * * 0"  # Domingo 08:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sincronizar entorno
+        run: uv sync --frozen
+
+      - name: Verificar URLs de fuentes
+        env:
+          GASTO_ESTADO_CREAR_ISSUES: "1"
+        run: uv run python -m gasto_estado.orchestration.health_check

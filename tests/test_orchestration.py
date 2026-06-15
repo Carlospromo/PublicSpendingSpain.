@@ -53,6 +53,7 @@ def test_particion_por_defecto_alta_frecuencia_formato() -> None:
     p = run_mod.particion_por_defecto("alta_frecuencia")
     # YYYY-MM-DD
     from datetime import date
+
     date.fromisoformat(p)  # no lanza ↔ formato ISO válido
 
 
@@ -115,12 +116,14 @@ def test_dimensiones_depende_de_seeds() -> None:
 
 def test_observable_source_assets_exportados() -> None:
     from dagster import SourceAsset
+
     assert isinstance(crosswalk_servicio_dir3, SourceAsset)
     assert isinstance(seeds_dimensiones, SourceAsset)
 
 
 def test_grupos_contienen_assets_correctos() -> None:
     from gasto_estado.orchestration import run
+
     grupo_mensual = run._GRUPOS["mensual"]
     grupo_af = run._GRUPOS["alta_frecuencia"]
 

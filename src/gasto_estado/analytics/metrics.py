@@ -103,6 +103,7 @@ _CODIGOS_DG = ["seccion_cod", "dg_dir3_cod"]
 def _codigos_nivel(nivel: str) -> list[str]:
     return _CODIGOS_DG if nivel == "dg" else _NIVEL_EJECUCION[nivel][0]
 
+
 # Prioridad del nivel orgánico al deduplicar el crosswalk a UN dir3 por servicio:
 # la unidad operativa más específica gana (el servicio 01 "Subsecretaría y
 # Servicios Generales" mapea a Ministerio+Subsecretaría → se queda Subsecretaría).
@@ -132,9 +133,7 @@ def _ensure_dg_crosswalk(con: duckdb.DuckDBPyConnection) -> None:
         ["ejercicio", "seccion_cod", "servicio_cod", "dir3_cod"]
     ]
     con.register("_cw_raw", crosswalk)
-    casos = " ".join(
-        f"WHEN '{n}' THEN {i}" for i, n in enumerate(_PRIORIDAD_NIVEL_DG)
-    )
+    casos = " ".join(f"WHEN '{n}' THEN {i}" for i, n in enumerate(_PRIORIDAD_NIVEL_DG))
     # TEMP TABLE (materializada): evalúa el SELECT ya, para poder soltar _cw_raw
     # después sin romper una vista diferida. Funciona en conexión read-only.
     con.execute(
@@ -165,7 +164,7 @@ def _frescura(con: duckdb.DuckDBPyConnection, tabla: str, fuentes: list[str]) ->
     row = con.execute(
         f"SELECT max(fecha_captura), min(periodo), max(periodo) FROM {tabla}"  # noqa: S608
     ).fetchone()
-    ultima, pmin, pmax = (row if row else (None, None, None))
+    ultima, pmin, pmax = row if row else (None, None, None)
     return {
         "fuentes": fuentes,
         "ultima_actualizacion": None if ultima is None else ultima.isoformat(),
@@ -543,8 +542,14 @@ def volumen_adjudicacion(
     de anclaje: qué fracción del importe se atribuye a un servicio.
     """
     return _volumen_compromiso(
-        con, metrica="volumen_adjudicacion", tabla="fact_contratos", fuente="placsp",
-        magnitud="importe_adjudicacion", nivel=nivel, periodo=periodo, ejercicio=ejercicio,
+        con,
+        metrica="volumen_adjudicacion",
+        tabla="fact_contratos",
+        fuente="placsp",
+        magnitud="importe_adjudicacion",
+        nivel=nivel,
+        periodo=periodo,
+        ejercicio=ejercicio,
     )
 
 
@@ -557,8 +562,14 @@ def volumen_concesion(
 ) -> MetricResult:
     """Importe concedido (BDNS) por nivel y ventana temporal (grano = concesión)."""
     return _volumen_compromiso(
-        con, metrica="volumen_concesion", tabla="fact_subvenciones", fuente="bdns",
-        magnitud="importe", nivel=nivel, periodo=periodo, ejercicio=ejercicio,
+        con,
+        metrica="volumen_concesion",
+        tabla="fact_subvenciones",
+        fuente="bdns",
+        magnitud="importe",
+        nivel=nivel,
+        periodo=periodo,
+        ejercicio=ejercicio,
     )
 
 
@@ -578,8 +589,11 @@ def concentracion_adjudicatarios(
     """
     if nivel not in ("servicio", "seccion", "dg"):
         raise ValueError(f"nivel {nivel!r} no soportado para concentración.")
-    organo = {"servicio": ["seccion_cod", "servicio_cod"], "seccion": ["seccion_cod"],
-              "dg": ["anclaje_dir3_cod"]}[nivel]
+    organo = {
+        "servicio": ["seccion_cod", "servicio_cod"],
+        "seccion": ["seccion_cod"],
+        "dg": ["anclaje_dir3_cod"],
+    }[nivel]
     where, params = _ventana_sql(periodo, ejercicio)
     org = ", ".join(organo)
     df = con.execute(

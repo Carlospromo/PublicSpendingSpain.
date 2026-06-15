@@ -24,7 +24,9 @@ PeriodoQuery = Query(..., pattern=r"^\d{4}-\d{2}$", description="Periodo mensual
 def paginacion_params(
     pagina: int = Query(1, ge=1, description="Página (1-indexada)."),
     tamano: int = Query(
-        TAMANO_DEFECTO, ge=1, le=TAMANO_MAXIMO,
+        TAMANO_DEFECTO,
+        ge=1,
+        le=TAMANO_MAXIMO,
         description=f"Tamaño de página (máx. {TAMANO_MAXIMO}).",
     ),
 ) -> tuple[int, int]:

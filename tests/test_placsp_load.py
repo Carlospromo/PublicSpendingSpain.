@@ -78,9 +78,9 @@ def test_republicacion_con_menos_lotes_no_deja_zombis(
     load.load_contratos(con, _anclado())
     # Foto nueva de la licitación multi-lote: PLACSP la republica con UN lote.
     anclado = _anclado(fecha_captura=date(2026, 6, 12))
-    refoto = anclado[
-        (anclado["licitacion_id"] == "19046011") & (anclado["lote_id"] == "1")
-    ].assign(fecha_actualizacion=date(2026, 6, 12))
+    refoto = anclado[(anclado["licitacion_id"] == "19046011") & (anclado["lote_id"] == "1")].assign(
+        fecha_actualizacion=date(2026, 6, 12)
+    )
     assert load.load_contratos(con, refoto) == 1
     lotes = con.execute(
         "SELECT lote_id FROM fact_contratos WHERE licitacion_id = '19046011'"

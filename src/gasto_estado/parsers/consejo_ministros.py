@@ -42,8 +42,7 @@ _URL_V2024 = (
     "{anio}/{fecha}-referencia-rueda-de-prensa-ministros.aspx"
 )
 _URL_V2018 = (
-    "https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/"
-    "{anio}/refc{fecha}.aspx"
+    "https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/{anio}/refc{fecha}.aspx"
 )
 
 # Tipos de acuerdo (enum cerrado, columna tipo_acuerdo). docs §5.
@@ -250,9 +249,7 @@ def parse_referencia(
 def _frame(filas: list[dict[str, Any]]) -> pd.DataFrame:
     detalle = pd.DataFrame(filas, columns=CDM_COLUMNS).astype(_DTYPES)
     if len(detalle):
-        detalle = detalle.drop_duplicates(subset=["acuerdo_id"], keep="last").reset_index(
-            drop=True
-        )
+        detalle = detalle.drop_duplicates(subset=["acuerdo_id"], keep="last").reset_index(drop=True)
     return cdm_acuerdo_schema.validate(detalle)
 
 

@@ -120,8 +120,12 @@ class Alerta:
 
 def _skip(tipo: str, periodo: str, motivo: str, ambito: dict[str, Any] | None = None) -> Alerta:
     return Alerta(
-        tipo=tipo, estado=SKIPPED, periodo=periodo, ambito=ambito or {"nivel": "AGE"},
-        naturaleza=metrics.EXACTA, motivo=motivo,
+        tipo=tipo,
+        estado=SKIPPED,
+        periodo=periodo,
+        ambito=ambito or {"nivel": "AGE"},
+        naturaleza=metrics.EXACTA,
+        motivo=motivo,
     )
 
 
@@ -265,7 +269,8 @@ def alertas_ritmo(con: duckdb.DuckDBPyConnection, periodo: str) -> list[Alerta]:
     if len(historicos) < RITMO_MIN_HIST:
         return [
             _skip(
-                "ritmo_ejecucion", periodo,
+                "ritmo_ejecucion",
+                periodo,
                 f"histórico insuficiente: {len(historicos)} mismo(s)-mes anterior(es) cargado(s) "
                 f"(se requieren {RITMO_MIN_HIST}); no se puede establecer la norma del servicio.",
             )
@@ -277,8 +282,11 @@ def alertas_ritmo(con: duckdb.DuckDBPyConnection, periodo: str) -> list[Alerta]:
     alertas: list[Alerta] = []
     evaluados = 0
     for clave, datos in actual.items():
-        valores = [series[p][clave]["pct"] for p in historicos
-                   if clave in series[p] and series[p][clave]["pct"] == series[p][clave]["pct"]]
+        valores = [
+            series[p][clave]["pct"]
+            for p in historicos
+            if clave in series[p] and series[p][clave]["pct"] == series[p][clave]["pct"]
+        ]
         if len(valores) < RITMO_MIN_HIST or datos["pct"] != datos["pct"]:
             continue
         if datos["definitivo"] < RITMO_IMPORTE_MIN:
@@ -305,9 +313,14 @@ def alertas_ritmo(con: duckdb.DuckDBPyConnection, periodo: str) -> list[Alerta]:
         ambito = _ambito_servicio(con, periodo, seccion, servicio, dg)
         alertas.append(
             Alerta(
-                tipo="ritmo_ejecucion", estado=ALERTA, periodo=periodo, ambito=ambito,
-                naturaleza=metrics.EXACTA, severidad=DESTACADA if destacada else A_REVISAR,
-                confianza=confianza, valor_observado=round(datos["pct"], 1),
+                tipo="ritmo_ejecucion",
+                estado=ALERTA,
+                periodo=periodo,
+                ambito=ambito,
+                naturaleza=metrics.EXACTA,
+                severidad=DESTACADA if destacada else A_REVISAR,
+                confianza=confianza,
+                valor_observado=round(datos["pct"], 1),
                 referencia={
                     "norma_mismo_mes_mediana_pct": round(mediana, 1),
                     "banda_robusta_pp": round(escala, 1),
@@ -328,18 +341,24 @@ def alertas_ritmo(con: duckdb.DuckDBPyConnection, periodo: str) -> list[Alerta]:
                     con, periodo, datos["definitivo"], ambito["dir3_cod"]
                 ),
                 evidencias=[
-                    {"tipo": "serie_historica", "mismo_mes": historicos,
-                     "grados_pct": [round(v, 1) for v in valores]},
-                    {"tipo": "aplicaciones",
-                     "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion} "
-                            f"servicio_cod={servicio}"},
+                    {
+                        "tipo": "serie_historica",
+                        "mismo_mes": historicos,
+                        "grados_pct": [round(v, 1) for v in valores],
+                    },
+                    {
+                        "tipo": "aplicaciones",
+                        "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion} "
+                        f"servicio_cod={servicio}",
+                    },
                 ],
             )
         )
     if evaluados == 0:
         return [
             _skip(
-                "ritmo_ejecucion", periodo,
+                "ritmo_ejecucion",
+                periodo,
                 "ningún servicio con histórico mismo-mes suficiente y crédito material.",
             )
         ]
@@ -364,8 +383,13 @@ def alertas_modificaciones(con: duckdb.DuckDBPyConnection, periodo: str) -> list
     pct = [_num(x) for x in df["modificaciones_pct"]]
     pct = [v for v in pct if v == v and abs(v) != float("inf")]
     if len(pct) < 5:
-        return [_skip("modificacion_atipica", periodo,
-                      "muy pocas secciones para un conjunto de referencia.")]
+        return [
+            _skip(
+                "modificacion_atipica",
+                periodo,
+                "muy pocas secciones para un conjunto de referencia.",
+            )
+        ]
     mediana = statistics.median(pct)
     mad = statistics.median([abs(v - mediana) for v in pct])
     escala = max(1.4826 * mad, MOD_PISO_PCT)  # suelo: evita z hipersensible con MAD≈0
@@ -386,9 +410,14 @@ def alertas_modificaciones(con: duckdb.DuckDBPyConnection, periodo: str) -> list
         seccion = str(fila["seccion_cod"])
         alertas.append(
             Alerta(
-                tipo="modificacion_atipica", estado=ALERTA, periodo=periodo,
-                ambito={"nivel": "seccion", "seccion_cod": seccion,
-                        "denominacion": fila.get("seccion_denominacion")},
+                tipo="modificacion_atipica",
+                estado=ALERTA,
+                periodo=periodo,
+                ambito={
+                    "nivel": "seccion",
+                    "seccion_cod": seccion,
+                    "denominacion": fila.get("seccion_denominacion"),
+                },
                 naturaleza=metrics.EXACTA,
                 severidad=DESTACADA if destacada else A_REVISAR,
                 confianza=CONF_MEDIA if prorroga else CONF_ALTA,
@@ -398,7 +427,8 @@ def alertas_modificaciones(con: duckdb.DuckDBPyConnection, periodo: str) -> list
                     "mediana_conjunto_pct": round(mediana, 1),
                     "banda_robusta_pp": round(escala, 1),
                     "z_robusta": round(z, 1),
-                    "umbral_pct": MOD_PCT_MIN, "umbral_eur": MOD_IMPORTE_MIN,
+                    "umbral_pct": MOD_PCT_MIN,
+                    "umbral_eur": MOD_IMPORTE_MIN,
                 },
                 contexto=(
                     f"Modificación neta derivada de {mod:+,.0f} € ({mp:+.1f}% sobre el crédito "
@@ -410,17 +440,23 @@ def alertas_modificaciones(con: duckdb.DuckDBPyConnection, periodo: str) -> list
                 ),
                 cobertura={
                     "magnitud": "credito_definitivo",
-                    "pct_del_credito_age": None if not total_f else round(
-                        100 * _num0(fila["credito_definitivo"]) / total_f, 2),
+                    "pct_del_credito_age": None
+                    if not total_f
+                    else round(100 * _num0(fila["credito_definitivo"]) / total_f, 2),
                     "nota": "Modificaciones DERIVADAS (definitivo − inicial); el Anexo I no las "
                     "publica explícitas.",
                 },
-                evidencias=[{"tipo": "aplicaciones",
-                             "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion}"}],
+                evidencias=[
+                    {
+                        "tipo": "aplicaciones",
+                        "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion}",
+                    }
+                ],
             )
         )
-    return alertas or [_skip("modificacion_atipica", periodo,
-                             "sin secciones fuera del patrón del conjunto.")]
+    return alertas or [
+        _skip("modificacion_atipica", periodo, "sin secciones fuera del patrón del conjunto.")
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -444,8 +480,13 @@ def alertas_concentracion(
     cob = res.cobertura_anclaje or {}
     pct_anclado = cob.get("pct_anclado_a_servicio")
     if df.empty:
-        return [_skip("concentracion_adjudicatarios", periodo,
-                      f"sin contratación anclada a servicio en el ejercicio {ej}.")]
+        return [
+            _skip(
+                "concentracion_adjudicatarios",
+                periodo,
+                f"sin contratación anclada a servicio en el ejercicio {ej}.",
+            )
+        ]
     alertas: list[Alerta] = []
     for fila in df.to_dict("records"):
         hhi = _num0(fila["hhi"])
@@ -460,18 +501,24 @@ def alertas_concentracion(
         else:
             severidad = DESTACADA if hhi >= CONC_HHI_DESTACADA else A_REVISAR
             conf = CONF_ALTA if (pct_anclado or 0) >= 60 else CONF_BAJA
-        anclaje_debil = (pct_anclado is not None and pct_anclado < 60)
+        anclaje_debil = pct_anclado is not None and pct_anclado < 60
         seccion = str(fila["seccion_cod"])
         servicio = str(fila["servicio_cod"])
         alertas.append(
             Alerta(
-                tipo="concentracion_adjudicatarios", estado=ALERTA, periodo=periodo,
+                tipo="concentracion_adjudicatarios",
+                estado=ALERTA,
+                periodo=periodo,
                 ambito={"nivel": "servicio", "seccion_cod": seccion, "servicio_cod": servicio},
-                naturaleza=metrics.EXACTA, severidad=severidad, confianza=conf,
+                naturaleza=metrics.EXACTA,
+                severidad=severidad,
+                confianza=conf,
                 valor_observado=hhi,
                 referencia={
-                    "hhi": hhi, "top_n_cuota_pct": _num0(fila["top_n_cuota_pct"]),
-                    "n_adjudicatarios": n_adj, "importe_total_eur": importe,
+                    "hhi": hhi,
+                    "top_n_cuota_pct": _num0(fila["top_n_cuota_pct"]),
+                    "n_adjudicatarios": n_adj,
+                    "importe_total_eur": importe,
                     "umbral_hhi": CONC_HHI_MIN,
                 },
                 contexto=(
@@ -487,13 +534,22 @@ def alertas_concentracion(
                     "nota": "Concentración calculada solo sobre contratos anclados a servicio "
                     "con adjudicatario identificado.",
                 },
-                evidencias=[{"tipo": "contratos",
-                             "ref": f"v_contratos ejercicio={ej} seccion_cod={seccion} "
-                             f"servicio_cod={servicio} anclaje_tipo=servicio"}],
+                evidencias=[
+                    {
+                        "tipo": "contratos",
+                        "ref": f"v_contratos ejercicio={ej} seccion_cod={seccion} "
+                        f"servicio_cod={servicio} anclaje_tipo=servicio",
+                    }
+                ],
             )
         )
-    return alertas or [_skip("concentracion_adjudicatarios", periodo,
-                             "sin órganos por encima del umbral de concentración material.")]
+    return alertas or [
+        _skip(
+            "concentracion_adjudicatarios",
+            periodo,
+            "sin órganos por encima del umbral de concentración material.",
+        )
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -524,36 +580,55 @@ def alertas_anticipacion(con: duckdb.DuckDBPyConnection, periodo: str) -> list[A
         servicio = str(fila["servicio_cod"])
         alertas.append(
             Alerta(
-                tipo="anticipacion_compromiso", estado=ALERTA, periodo=periodo,
+                tipo="anticipacion_compromiso",
+                estado=ALERTA,
+                periodo=periodo,
                 ambito={"nivel": "servicio", "seccion_cod": seccion, "servicio_cod": servicio},
                 naturaleza=metrics.INDICIARIA,
-                severidad=DESTACADA if destacada else A_REVISAR, confianza=CONF_BAJA,
+                severidad=DESTACADA if destacada else A_REVISAR,
+                confianza=CONF_BAJA,
                 valor_observado=round(ratio, 2) if ratio != float("inf") else None,
-                referencia={"umbral_ratio": ANTIC_RATIO_MIN,
-                            "umbral_importe_eur": ANTIC_IMPORTE_MIN},
+                referencia={
+                    "umbral_ratio": ANTIC_RATIO_MIN,
+                    "umbral_importe_eur": ANTIC_IMPORTE_MIN,
+                },
                 contexto=(
                     f"Compromiso adjudicado en PLACSP ({adjudicado:,.0f} €) elevado frente a la "
                     f"ORN reconocida ({orn:,.0f} €) en el ejercicio: indicio de ejecución por "
                     f"venir, NO una conciliación contable (hay IVA, plurianualidad y contratos "
                     f"que no llegan a ORN). Se muestran ambas magnitudes por separado."
                 ),
-                cobertura={"magnitud": "importe_adjudicacion",
-                           "pct_anclado_a_servicio": cob.get("pct_anclado_a_servicio")},
-                magnitudes={"orn_igae_eur": round(orn, 2),
-                            "adjudicado_placsp_eur": round(adjudicado, 2),
-                            "ratio_adjudicado_orn": None if ratio == float("inf")
-                            else round(ratio, 2)},
-                evidencias=[{"tipo": "contratos",
-                             "ref": f"v_contratos ejercicio={periodo[:4]} seccion_cod={seccion} "
-                             f"servicio_cod={servicio}"},
-                            {"tipo": "ejecucion",
-                             "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion} "
-                             f"servicio_cod={servicio}"}],
+                cobertura={
+                    "magnitud": "importe_adjudicacion",
+                    "pct_anclado_a_servicio": cob.get("pct_anclado_a_servicio"),
+                },
+                magnitudes={
+                    "orn_igae_eur": round(orn, 2),
+                    "adjudicado_placsp_eur": round(adjudicado, 2),
+                    "ratio_adjudicado_orn": None if ratio == float("inf") else round(ratio, 2),
+                },
+                evidencias=[
+                    {
+                        "tipo": "contratos",
+                        "ref": f"v_contratos ejercicio={periodo[:4]} seccion_cod={seccion} "
+                        f"servicio_cod={servicio}",
+                    },
+                    {
+                        "tipo": "ejecucion",
+                        "ref": f"v_ejecucion periodo={periodo} seccion_cod={seccion} "
+                        f"servicio_cod={servicio}",
+                    },
+                ],
             )
         )
     if not alertas:
-        return [_skip("anticipacion_compromiso", periodo,
-                      "sin servicios con compromiso material por encima de la ORN.")]
+        return [
+            _skip(
+                "anticipacion_compromiso",
+                periodo,
+                "sin servicios con compromiso material por encima de la ORN.",
+            )
+        ]
     return alertas
 
 
@@ -571,7 +646,8 @@ _REGLAS: tuple[Callable[[duckdb.DuckDBPyConnection, str], list[Alerta]], ...] = 
 
 def periodos_igae(con: duckdb.DuckDBPyConnection) -> list[str]:
     return [
-        r[0] for r in con.execute(
+        r[0]
+        for r in con.execute(
             "SELECT DISTINCT periodo FROM fact_ejecucion WHERE fuente_cod='igae_anexo_i' "
             "ORDER BY periodo"
         ).fetchall()
@@ -629,11 +705,13 @@ def informe(con: duckdb.DuckDBPyConnection, periodo: str) -> dict[str, Any]:
     alertas = run_alerts(con, [periodo])
     disparadas = [a for a in alertas if a.estado == ALERTA]
     omitidas = [a for a in alertas if a.estado == SKIPPED]
-    disparadas.sort(key=lambda a: (
-        _ORDEN_SEVERIDAD.get(a.severidad or "", 9),
-        a.ambito.get("seccion_cod") or "",
-        a.ambito.get("servicio_cod") or "",
-    ))
+    disparadas.sort(
+        key=lambda a: (
+            _ORDEN_SEVERIDAD.get(a.severidad or "", 9),
+            a.ambito.get("seccion_cod") or "",
+            a.ambito.get("servicio_cod") or "",
+        )
+    )
     conteo: dict[str, int] = {DESTACADA: 0, A_REVISAR: 0, INFORMATIVA: 0}
     for a in disparadas:
         if a.severidad:

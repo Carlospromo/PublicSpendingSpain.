@@ -33,9 +33,7 @@ def detect_vintage(root: etree._Element) -> str:
     CODICE 2.x, se aborta en vez de adivinar un parser.
     """
     if not root.tag == f"{{{_ATOM_NS}}}feed":
-        raise ValueError(
-            f"La raíz no es un feed Atom de PLACSP (tag={root.tag!r})."
-        )
+        raise ValueError(f"La raíz no es un feed Atom de PLACSP (tag={root.tag!r}).")
     namespaces = set(root.nsmap.values())
     if _CODICE2_NS in namespaces:
         return VINTAGE_CODICE2

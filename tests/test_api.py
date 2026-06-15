@@ -230,21 +230,52 @@ def test_openapi_snapshot_de_modelos_clave(client: TestClient) -> None:
         return set(schemas[nombre]["properties"])
 
     assert props("Meta") == {
-        "generado_en", "version", "nivel", "naturaleza", "magnitudes", "fuentes",
-        "frescura", "cobertura_anclaje", "advertencias", "paginacion",
+        "generado_en",
+        "version",
+        "nivel",
+        "naturaleza",
+        "magnitudes",
+        "fuentes",
+        "frescura",
+        "cobertura_anclaje",
+        "advertencias",
+        "paginacion",
     }
     assert props("Paginacion") == {"total", "pagina", "tamano", "hay_siguiente"}
     assert props("SeccionModel") == {
-        "nivel", "ejercicio", "seccion_cod", "denominacion", "n_servicios"
+        "nivel",
+        "ejercicio",
+        "seccion_cod",
+        "denominacion",
+        "n_servicios",
     }
     assert props("ServicioModel") == {
-        "nivel", "ejercicio", "seccion_cod", "servicio_cod", "denominacion", "dg_dir3_cod",
-        "dg_denominacion", "dg_nivel_organico", "dg_equivalencia_aproximada", "dg_nota",
+        "nivel",
+        "ejercicio",
+        "seccion_cod",
+        "servicio_cod",
+        "denominacion",
+        "dg_dir3_cod",
+        "dg_denominacion",
+        "dg_nivel_organico",
+        "dg_equivalencia_aproximada",
+        "dg_nota",
     }
     assert props("AlertaModel") == {
-        "tipo", "estado", "periodo", "ambito", "naturaleza", "severidad", "confianza",
-        "valor_observado", "referencia", "contexto", "cobertura", "evidencias",
-        "magnitudes", "motivo",
+        "tipo",
+        "estado",
+        "periodo",
+        "ambito",
+        "naturaleza",
+        "severidad",
+        "confianza",
+        "valor_observado",
+        "referencia",
+        "contexto",
+        "cobertura",
+        "evidencias",
+        "magnitudes",
+        "motivo",
     }
     assert props("ErrorDetalle") == {"codigo", "mensaje", "detalle"}
 

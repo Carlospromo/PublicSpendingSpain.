@@ -207,9 +207,7 @@ def _parse_entry(entry: etree._Element, *, fecha_captura: date | None) -> list[d
         "subtipo_contrato_cod": _text(project, "cbc:SubTypeCode"),
         "procedimiento_cod": _text(entry, ".//cac:TenderingProcess/cbc:ProcedureCode"),
         # CPV principal: el primero de la clasificación (división = 2 primeros díg.).
-        "cpv_cod": _text(
-            project, "cac:RequiredCommodityClassification/cbc:ItemClassificationCode"
-        ),
+        "cpv_cod": _text(project, "cac:RequiredCommodityClassification/cbc:ItemClassificationCode"),
         "estado_cod": _text(entry, ".//cbcx:ContractFolderStatusCode"),
         "fecha_formalizacion": _date(entry, ".//cac:Contract/cbc:IssueDate"),
         "fecha_actualizacion": fecha_actualizacion,

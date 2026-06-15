@@ -36,9 +36,7 @@ def registrar_manejadores(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def _http(_: Request, exc: HTTPException) -> JSONResponse:
         codigo = _CODIGO_POR_HTTP.get(exc.status_code, "error")
-        return JSONResponse(
-            status_code=exc.status_code, content=_cuerpo(codigo, str(exc.detail))
-        )
+        return JSONResponse(status_code=exc.status_code, content=_cuerpo(codigo, str(exc.detail)))
 
     @app.exception_handler(RequestValidationError)
     async def _validacion(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -53,6 +51,4 @@ def registrar_manejadores(app: FastAPI) -> None:
     async def _value_error(_: Request, exc: ValueError) -> JSONResponse:
         # Las funciones puras validan su entrada con ValueError (nivel/periodo
         # inválido): 422 uniforme, no un 500 opaco.
-        return JSONResponse(
-            status_code=422, content=_cuerpo("entrada_invalida", str(exc))
-        )
+        return JSONResponse(status_code=422, content=_cuerpo("entrada_invalida", str(exc)))

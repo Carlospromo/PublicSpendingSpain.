@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="API + Dashboard" type="CompoundRunConfigurationType">
+    <toRun name="API (puerto 8000)" type="PythonConfigurationType" />
+    <toRun name="Dashboard (Streamlit)" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

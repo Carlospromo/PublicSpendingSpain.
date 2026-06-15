@@ -27,6 +27,12 @@ dependencies = [
 gasto-estado = "gasto_estado.cli:app"
 
 [dependency-groups]
+dashboard = [
+    # streamlit: prototipo de dashboard que consume la API v1 (Fase 8)
+    "streamlit>=1.45.0",
+    # plotly: gráficos interactivos (ritmo intra-anual, HHI, cruces)
+    "plotly>=6.0.0",
+]
 dev = [
     "ruff==0.15.16",
     "mypy==2.1.0",

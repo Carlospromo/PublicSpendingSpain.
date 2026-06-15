@@ -24,7 +24,16 @@ from gasto_estado.orchestration import frescura
 from gasto_estado.parsers import bdns as bdns_parser
 from gasto_estado.parsers import boe as boe_parser
 from gasto_estado.parsers import consejo_ministros as cdm_parser
+from gasto_estado.parsers.format_sentinel import DiagnosticoFormato, verificar
 from gasto_estado.parsers.placsp import discover_capturas as placsp_capturas
+
+
+class FormatoNoReconocidoError(Exception):
+    """El centinela de formato rechazó un fichero raw antes del parseo."""
+
+    def __init__(self, diagnostico: DiagnosticoFormato) -> None:
+        self.diagnostico = diagnostico
+        super().__init__(diagnostico.mensaje)
 
 
 @dataclass(frozen=True)
@@ -34,6 +43,27 @@ class Materializacion:
     fuente: str
     particion: str | None
     filas: int
+
+
+def _verificar_raw(fuente: str, raw_dir: Path, subdirs: list[str]) -> None:
+    """Ejecuta el centinela de formato en los ficheros raw de las capturas indicadas."""
+    _RAW_SUBDIR = {
+        "igae_mensual": "igae_mensual",
+        "placsp": "placsp",
+        "bdns": "bdns",
+        "boe_sumario": "boe",
+        "consejo_ministros": "consejo_ministros",
+    }
+    carpeta = raw_dir / _RAW_SUBDIR.get(fuente, fuente)
+    for sub in subdirs:
+        captura = carpeta / sub
+        if not captura.is_dir():
+            continue
+        for archivo in captura.iterdir():
+            if archivo.is_file():
+                diag = verificar(fuente, archivo)
+                if not diag.valido:
+                    raise FormatoNoReconocidoError(diag)
 
 
 def _conexion_con_dimensiones(db_path: Path) -> duckdb.DuckDBPyConnection:
@@ -60,6 +90,8 @@ def materializar_ejecucion(
         from gasto_estado.extractors import igae_mensual
 
         igae_mensual.extract(periodo=periodo, raw_dir=raw_dir)
+    if periodo in load.discover_periodos(raw_dir):
+        _verificar_raw("igae_mensual", raw_dir, [periodo])
     con = _conexion_con_dimensiones(db_path)
     try:
         if periodo not in load.discover_periodos(raw_dir):
@@ -83,14 +115,17 @@ def _materializar_capturas(
     particion: str | None,
 ) -> Materializacion:
     objetivo = capturas if capturas is not None else descubrir
+    if objetivo:
+        _verificar_raw(fuente_cod, raw_dir, objetivo)
     con = _conexion_con_dimensiones(db_path)
     try:
         stats = cargar(con, raw_dir, objetivo) if objetivo else {}  # type: ignore[operator]
     finally:
         con.close()
     filas = sum(stats.values())
-    frescura.registrar(db_path, fuente_cod, particion=particion or ",".join(objetivo) or None,
-                       filas=filas)
+    frescura.registrar(
+        db_path, fuente_cod, particion=particion or ",".join(objetivo) or None, filas=filas
+    )
     return Materializacion(fuente_cod, particion, filas)
 
 
@@ -103,8 +138,12 @@ def materializar_placsp(
 
         placsp_atom.extract(paginas=1, raw_dir=raw_dir)
     return _materializar_capturas(
-        db_path, raw_dir, fuente_cod="placsp", capturas=capturas,
-        descubrir=placsp_capturas(raw_dir), cargar=load.cargar_capturas_placsp,
+        db_path,
+        raw_dir,
+        fuente_cod="placsp",
+        capturas=capturas,
+        descubrir=placsp_capturas(raw_dir),
+        cargar=load.cargar_capturas_placsp,
         particion=capturas[0] if capturas else None,
     )
 
@@ -119,8 +158,12 @@ def materializar_bdns(
         hoy = date.today()
         bdns_api.extract(desde=hoy - timedelta(days=7), hasta=hoy, raw_dir=raw_dir)
     return _materializar_capturas(
-        db_path, raw_dir, fuente_cod="bdns", capturas=capturas,
-        descubrir=bdns_parser.discover_capturas(raw_dir), cargar=load.cargar_capturas_bdns,
+        db_path,
+        raw_dir,
+        fuente_cod="bdns",
+        capturas=capturas,
+        descubrir=bdns_parser.discover_capturas(raw_dir),
+        cargar=load.cargar_capturas_bdns,
         particion=capturas[0] if capturas else None,
     )
 
@@ -135,8 +178,12 @@ def materializar_boe(
         hoy = date.today()
         boe_sumario.extract(desde=hoy - timedelta(days=7), hasta=hoy, raw_dir=raw_dir)
     return _materializar_capturas(
-        db_path, raw_dir, fuente_cod="boe_sumario", capturas=capturas,
-        descubrir=boe_parser.discover_capturas(raw_dir), cargar=load.cargar_capturas_boe,
+        db_path,
+        raw_dir,
+        fuente_cod="boe_sumario",
+        capturas=capturas,
+        descubrir=boe_parser.discover_capturas(raw_dir),
+        cargar=load.cargar_capturas_boe,
         particion=capturas[0] if capturas else None,
     )
 
@@ -151,8 +198,12 @@ def materializar_cdm(
         hoy = date.today()
         consejo_ministros.extract(desde=hoy - timedelta(days=7), hasta=hoy, raw_dir=raw_dir)
     return _materializar_capturas(
-        db_path, raw_dir, fuente_cod="consejo_ministros", capturas=capturas,
-        descubrir=cdm_parser.discover_capturas(raw_dir), cargar=load.cargar_capturas_cdm,
+        db_path,
+        raw_dir,
+        fuente_cod="consejo_ministros",
+        capturas=capturas,
+        descubrir=cdm_parser.discover_capturas(raw_dir),
+        cargar=load.cargar_capturas_cdm,
         particion=capturas[0] if capturas else None,
     )
 

@@ -131,3 +131,44 @@ Con `dagster dev -m gasto_estado.orchestration.definitions` se puede levantar la
 3. Añadirlo al grupo correspondiente en `orchestration/run.py`.
 4. Añadirlo a `defs` en `orchestration/definitions.py`.
 5. Si es un hecho, añadir una entrada en `analytics/estructura.py::_FRESCURA_FUENTES`.
+
+## Resiliencia operativa
+
+### Fallo parcial
+
+Los assets del grupo de alta frecuencia son independientes entre sí: `fact_contratos`, `fact_subvenciones`, `fact_boe` y `fact_acuerdos_cdm` no dependen unos de otros. Si PLACSP falla pero el resto no:
+
+- Los assets que no dependen de PLACSP completan su materialización normalmente.
+- El fallo de PLACSP genera una incidencia notificada (step summary + issue opcional).
+- El warehouse sigue disponible con los datos del resto de fuentes.
+
+El grupo mensual tiene un gate: `validacion_contable` depende de `fact_ejecucion`. Si la validación falla, solo queda sin cargar ese periodo; el resto del warehouse sigue disponible con los periodos anteriores.
+
+### Centinela de formato (pre-parser)
+
+Antes de parsear, el centinela (`parsers/format_sentinel.py`) verifica que el fichero descargado tiene la estructura esperada:
+
+- **IGAE**: hojas S5 + SNN, cabeceras de magnitudes, vintage reconocido.
+- **PLACSP**: ZIP válido con .atom, namespace CODICE 2.x, entries presentes.
+- **BDNS**: JSON con `content`, campos requeridos en cada item.
+- **BOE**: XML con estructura sumario/diario o documento/metadatos.
+- **CdM**: HTML con bloque SUMARIO, h3 ministerios proponentes.
+
+Si el centinela falla, produce un diagnóstico detallado ("las hojas ahora se llaman Sec01 en vez de S01, investigar posible nuevo vintage") y detiene el pipeline antes del parser. El centinela **nunca auto-repara**: un cambio de formato requiere decisión humana (¿es un nuevo vintage?).
+
+### Notificaciones CI
+
+Cuando una materialización falla, el sistema genera un informe de incidencia visible de dos formas:
+
+1. **Step summary** (`$GITHUB_STEP_SUMMARY`): siempre, sin configuración.
+2. **Issue de GitHub** (etiqueta `pipeline-failure`): opt-in con `GASTO_ESTADO_CREAR_ISSUES=1`.
+
+Tipos de incidencia: `validacion_contable`, `formato_no_reconocido`, `error_descarga`, `revision_silenciosa`, `url_caida`.
+
+### Monitor de URLs
+
+El workflow `health_check.yml` (domingo 08:00 UTC) verifica semanalmente que las URLs base de `config/sources.yaml` siguen respondiendo. Las fuentes marcadas `requerido: true` generan issue si fallan; las opcionales solo un aviso informativo.
+
+### Revisiones silenciosas de la IGAE
+
+La IGAE revisa a veces un fichero ya publicado sin cambiar la URL. El detector compara el hash del fichero recién descargado con las capturas anteriores del mismo periodo. Si difiere, registra una nota en el ledger y genera una incidencia. **No recarga automáticamente**: una revisión silenciosa puede legítimamente cambiar cifras, y eso debe ser una decisión consciente.

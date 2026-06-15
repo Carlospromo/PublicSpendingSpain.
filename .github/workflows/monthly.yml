@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +34,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Materializar assets mensuales (IGAE)
+        id: materialize
         run: |
           PARTICION="${{ github.event.inputs.particion }}"
           if [ -z "$PARTICION" ]; then
@@ -41,7 +43,23 @@ jobs:
             uv run gasto-estado materialize mensual --particion "$PARTICION"
           fi
 
+      - name: Notificar fallo
+        if: failure()
+        env:
+          GASTO_ESTADO_CREAR_ISSUES: "1"
+        run: |
+          uv run python -c "
+          from gasto_estado.orchestration.notifications import Incidencia, notificar_incidencias
+          notificar_incidencias([Incidencia(
+              fuente='igae_mensual',
+              particion='${{ github.event.inputs.particion }}' or None,
+              tipo_fallo='error_descarga',
+              mensaje_diagnostico='La materialización mensual falló. Revisar los logs del step anterior.',
+          )])
+          "
+
       - name: Commit de datos si hay cambios
+        if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

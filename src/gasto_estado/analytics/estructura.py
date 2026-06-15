@@ -65,8 +65,13 @@ def secciones(con: duckdb.DuckDBPyConnection, ejercicio: int) -> list[dict[str, 
         [ejercicio],
     ).fetchall()
     return [
-        {"nivel": "seccion", "ejercicio": ejercicio, "seccion_cod": r[0],
-         "denominacion": r[1], "n_servicios": int(r[2])}
+        {
+            "nivel": "seccion",
+            "ejercicio": ejercicio,
+            "seccion_cod": r[0],
+            "denominacion": r[1],
+            "n_servicios": int(r[2]),
+        }
         for r in filas
     ]
 
@@ -98,18 +103,29 @@ def servicios(
     out: list[dict[str, Any]] = []
     for r in filas:
         tiene_dg = r[2] is not None
-        out.append({
-            "nivel": "servicio", "ejercicio": ejercicio, "seccion_cod": seccion_cod,
-            "servicio_cod": r[0], "denominacion": r[1],
-            "dg_dir3_cod": r[2], "dg_denominacion": r[3], "dg_nivel_organico": r[4],
-            "dg_equivalencia_aproximada": bool(tiene_dg and aproximada),
-            "dg_nota": (
-                None if not tiene_dg else
-                (f"Equivalencia DG nominal según la estructura {cw_ej}; aproximada para "
-                 f"el ejercicio {ejercicio}." if aproximada else
-                 f"Equivalencia DG según la estructura vigente {cw_ej}.")
-            ),
-        })
+        out.append(
+            {
+                "nivel": "servicio",
+                "ejercicio": ejercicio,
+                "seccion_cod": seccion_cod,
+                "servicio_cod": r[0],
+                "denominacion": r[1],
+                "dg_dir3_cod": r[2],
+                "dg_denominacion": r[3],
+                "dg_nivel_organico": r[4],
+                "dg_equivalencia_aproximada": bool(tiene_dg and aproximada),
+                "dg_nota": (
+                    None
+                    if not tiene_dg
+                    else (
+                        f"Equivalencia DG nominal según la estructura {cw_ej}; aproximada para "
+                        f"el ejercicio {ejercicio}."
+                        if aproximada
+                        else f"Equivalencia DG según la estructura vigente {cw_ej}."
+                    )
+                ),
+            }
+        )
     return out
 
 
@@ -119,8 +135,13 @@ def catalogo_programas(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
         "FROM dim_programa ORDER BY programa_cod"
     ).fetchall()
     return [
-        {"programa_cod": r[0], "area_gasto_cod": r[1], "politica_cod": r[2],
-         "grupo_programas_cod": r[3], "denominacion": r[4]}
+        {
+            "programa_cod": r[0],
+            "area_gasto_cod": r[1],
+            "politica_cod": r[2],
+            "grupo_programas_cod": r[3],
+            "denominacion": r[4],
+        }
         for r in filas
     ]
 
@@ -131,8 +152,13 @@ def catalogo_economicas(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
         "FROM dim_economica ORDER BY economica_cod"
     ).fetchall()
     return [
-        {"economica_cod": r[0], "nivel": r[1], "capitulo_cod": r[2],
-         "denominacion": r[3], "denominacion_origen": r[4]}
+        {
+            "economica_cod": r[0],
+            "nivel": r[1],
+            "capitulo_cod": r[2],
+            "denominacion": r[3],
+            "denominacion_origen": r[4],
+        }
         for r in filas
     ]
 
@@ -144,8 +170,13 @@ def catalogo_fuentes(con: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
         "FROM dim_fuente ORDER BY fase, fuente_cod"
     ).fetchall()
     return [
-        {"fuente_cod": r[0], "denominacion": r[1], "velocidad": r[2],
-         "periodicidad": r[3], "fase": int(r[4])}
+        {
+            "fuente_cod": r[0],
+            "denominacion": r[1],
+            "velocidad": r[2],
+            "periodicidad": r[3],
+            "fase": int(r[4]),
+        }
         for r in filas
     ]
 
@@ -164,6 +195,7 @@ def frescura_fuentes(
     ledger: dict[str, Any] = {}
     if warehouse_path is not None:
         from gasto_estado.orchestration import frescura as ledger_mod
+
         ledger = ledger_mod.leer(warehouse_path)
 
     velocidades = {f["fuente_cod"]: f for f in catalogo_fuentes(con)}
@@ -175,18 +207,20 @@ def frescura_fuentes(
             f"SELECT count(*), max(fecha_captura), min(periodo), max(periodo) FROM {tabla}{filtro}",  # noqa: S608
             params,
         ).fetchone()
-        n, ultima, pmin, pmax = (fila if fila else (0, None, None, None))
+        n, ultima, pmin, pmax = fila if fila else (0, None, None, None)
         meta = velocidades.get(fuente, {})
         entrada_ledger = ledger.get(fuente, {})
-        out.append({
-            "fuente_cod": fuente,
-            "velocidad": meta.get("velocidad"),
-            "periodicidad": meta.get("periodicidad"),
-            "n_filas": int(n or 0),
-            "ultima_actualizacion": None if ultima is None else ultima.isoformat(),
-            "periodo_cubierto": None if pmin is None else [pmin, pmax],
-            "materializado_en": entrada_ledger.get("materializado_en"),
-        })
+        out.append(
+            {
+                "fuente_cod": fuente,
+                "velocidad": meta.get("velocidad"),
+                "periodicidad": meta.get("periodicidad"),
+                "n_filas": int(n or 0),
+                "ultima_actualizacion": None if ultima is None else ultima.isoformat(),
+                "periodo_cubierto": None if pmin is None else [pmin, pmax],
+                "materializado_en": entrada_ledger.get("materializado_en"),
+            }
+        )
     return out
 
 

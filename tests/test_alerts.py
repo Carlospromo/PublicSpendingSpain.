@@ -40,9 +40,16 @@ def _synth() -> duckdb.DuckDBPyConnection:
 
 
 def _ins_ejec(
-    con: duckdb.DuckDBPyConnection, periodo: str, seccion: str, servicio: str,
-    inicial: float, definitivo: float, orn: float,
-    *, programa: str = "000A", economica: str = "100",
+    con: duckdb.DuckDBPyConnection,
+    periodo: str,
+    seccion: str,
+    servicio: str,
+    inicial: float,
+    definitivo: float,
+    orn: float,
+    *,
+    programa: str = "000A",
+    economica: str = "100",
 ) -> None:
     ej, mes = int(periodo[:4]), int(periodo[5:7])
     fin = date(ej, mes, monthrange(ej, mes)[1])
@@ -51,8 +58,15 @@ def _ins_ejec(
     )
     con.execute(
         "INSERT OR IGNORE INTO dim_seccion_servicio VALUES (?,?,?,?,?,?,?)",
-        [ej, seccion, servicio, f"SECCION {seccion}", f"SERVICIO {seccion}.{servicio}",
-         None, "derivado_igae"],
+        [
+            ej,
+            seccion,
+            servicio,
+            f"SECCION {seccion}",
+            f"SERVICIO {seccion}.{servicio}",
+            None,
+            "derivado_igae",
+        ],
     )
     con.execute(
         "INSERT OR IGNORE INTO dim_programa VALUES (?,?,?,?,?,?)",
@@ -64,15 +78,37 @@ def _ins_ejec(
     )
     con.execute(
         f"INSERT INTO fact_ejecucion ({_FACT_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [periodo, "igae_anexo_i", ej, seccion, servicio, programa, economica, "NT",
-         "test", inicial, definitivo, None, None, orn, None,
-         "credito_inicial,credito_definitivo,orn", fin],
+        [
+            periodo,
+            "igae_anexo_i",
+            ej,
+            seccion,
+            servicio,
+            programa,
+            economica,
+            "NT",
+            "test",
+            inicial,
+            definitivo,
+            None,
+            None,
+            orn,
+            None,
+            "credito_inicial,credito_definitivo,orn",
+            fin,
+        ],
     )
 
 
 def _ins_contrato(
-    con: duckdb.DuckDBPyConnection, lic: str, lote: str, periodo: str, seccion: str,
-    servicio: str, adjudicatario: str, importe: float,
+    con: duckdb.DuckDBPyConnection,
+    lic: str,
+    lote: str,
+    periodo: str,
+    seccion: str,
+    servicio: str,
+    adjudicatario: str,
+    importe: float,
 ) -> None:
     ej, mes = int(periodo[:4]), int(periodo[5:7])
     fin = date(ej, mes, monthrange(ej, mes)[1])
@@ -84,8 +120,22 @@ def _ins_contrato(
         "es_cabecera_expediente, seccion_cod, servicio_cod, anclaje_dir3_cod, anclaje_tipo, "
         "anclaje_senal, importe_adjudicacion, adjudicatario_id, fecha_captura) "
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [lic, lote, "placsp", periodo, ej, True, seccion, servicio, "E00000001", "servicio",
-         "dir3_directo", importe, adjudicatario, fin],
+        [
+            lic,
+            lote,
+            "placsp",
+            periodo,
+            ej,
+            True,
+            seccion,
+            servicio,
+            "E00000001",
+            "servicio",
+            "dir3_directo",
+            importe,
+            adjudicatario,
+            fin,
+        ],
     )
 
 
@@ -164,8 +214,9 @@ def test_concentracion_dispara_y_no_sobre_competido() -> None:
     # Órgano 16.03: 5 adjudicatarios equilibrados (no concentrado).
     for i in range(5):
         _ins_contrato(con, f"M{i}", "0", "2024-06", "16", "03", f"EMP_{i}", 2e6)
-    res = [a for a in al.alertas_concentracion(con, "2024-06", ejercicio=2024)
-           if a.estado == al.ALERTA]
+    res = [
+        a for a in al.alertas_concentracion(con, "2024-06", ejercicio=2024) if a.estado == al.ALERTA
+    ]
     servicios = {a.ambito["servicio_cod"] for a in res}
     assert "02" in servicios and "03" not in servicios
     conc = next(a for a in res if a.ambito["servicio_cod"] == "02")

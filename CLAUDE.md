@@ -248,4 +248,4 @@ Toda carga DEBE pasar estos checks (en `quality/checks.py`). Si fallan: parar y 
 - [x] Fase 5 — Métricas y alertas analíticas
 - [x] Fase 6 — API de exposición (FastAPI) para el frontal
 - [x] Fase 7 — Orquestación con Dagster (assets) + disparo CI
-- [ ] Fase 8 — Prototipo de dashboard y contrato de datos para el frontal web
+- [x] Fase 8 — Prototipo de dashboard y contrato de datos para el frontal web

@@ -33,8 +33,11 @@ def salud(request: Request) -> Envelope[SaludModel]:
     db = getattr(request.app.state, "db", None)
     if db is None:
         modelo = SaludModel(
-            accesible=False, ejercicios=[], n_periodos_igae=0,
-            perimetro=_PERIMETRO, cobertura_dg_nota=_COBERTURA_DG,
+            accesible=False,
+            ejercicios=[],
+            n_periodos_igae=0,
+            perimetro=_PERIMETRO,
+            cobertura_dg_nota=_COBERTURA_DG,
         )
     else:
         modelo = SaludModel(**estructura.salud(db.cursor()))

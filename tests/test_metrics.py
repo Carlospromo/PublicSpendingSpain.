@@ -131,10 +131,13 @@ def test_modificaciones_derivadas(con: duckdb.DuckDBPyConnection) -> None:
     assert r.naturaleza == m.EXACTA
     assert any("DERIVADA" in a for a in r.advertencias)
     fila = r.data.iloc[0]
-    assert abs(
-        float(fila["modificaciones"])
-        - (float(fila["credito_definitivo"]) - float(fila["credito_inicial"]))
-    ) < 1e-6
+    assert (
+        abs(
+            float(fila["modificaciones"])
+            - (float(fila["credito_definitivo"]) - float(fila["credito_inicial"]))
+        )
+        < 1e-6
+    )
 
 
 # ---------------------------------------------------------------------------

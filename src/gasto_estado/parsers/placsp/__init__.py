@@ -43,10 +43,19 @@ _MAX_MEMBER_BYTES = 2_000_000_000
 # órgano) quedaría como object y rompería la validación; se coerciona siempre
 # (None → NaN, nunca el literal "None"). Fechas/booleano-nullable van como
 # object por diseño del esquema.
-_FLOAT_COLS = ["presupuesto_sin_iva", "presupuesto_con_iva", "valor_estimado",
-               "importe_adjudicacion"]
-_OBJECT_COLS = {"fecha_captura", "adjudicatario_es_pyme", "fecha_adjudicacion",
-                "fecha_formalizacion", "fecha_actualizacion"}
+_FLOAT_COLS = [
+    "presupuesto_sin_iva",
+    "presupuesto_con_iva",
+    "valor_estimado",
+    "importe_adjudicacion",
+]
+_OBJECT_COLS = {
+    "fecha_captura",
+    "adjudicatario_es_pyme",
+    "fecha_adjudicacion",
+    "fecha_formalizacion",
+    "fecha_actualizacion",
+}
 _DTYPES: dict[str, Any] = {
     c: "str"
     for c in PLACSP_COLUMNS
@@ -56,9 +65,7 @@ _DTYPES |= dict.fromkeys(_FLOAT_COLS, "float64")
 _DTYPES["es_cabecera_expediente"] = bool
 
 
-def parse_atom(
-    content: bytes, *, fecha_captura: date | None = None
-) -> list[dict[str, object]]:
+def parse_atom(content: bytes, *, fecha_captura: date | None = None) -> list[dict[str, object]]:
     """Parsea un documento ATOM/CODICE (bytes) a filas canónicas."""
     root = etree.parse(io.BytesIO(content)).getroot()
     vintage = detect_vintage(root)
@@ -82,9 +89,7 @@ def _filas_de_fichero(path: Path, *, fecha_captura: date | None) -> list[dict[st
     return parse_atom(path.read_bytes(), fecha_captura=fecha_captura)
 
 
-def parse_captura(
-    paths: list[Path], *, fecha_captura: date | None = None
-) -> pd.DataFrame:
+def parse_captura(paths: list[Path], *, fecha_captura: date | None = None) -> pd.DataFrame:
     """Parsea los ficheros raw de una captura y devuelve el canónico validado.
 
     Acepta páginas ``.atom`` y ZIP anuales mezclados. Dedup por expediente:
@@ -105,9 +110,7 @@ def parse_captura(
         # ENTERO el bloque más reciente (mayor fecha_actualizacion; desempate
         # por posición del bloque — el orden de paths es determinista).
         fechas = detalle["fecha_actualizacion"].map(lambda d: d or date.min)
-        cambio = (detalle["entry_id"] != detalle["entry_id"].shift()) | (
-            fechas != fechas.shift()
-        )
+        cambio = (detalle["entry_id"] != detalle["entry_id"].shift()) | (fechas != fechas.shift())
         bloque = cambio.cumsum()
         clave = pd.Series(zip(fechas, bloque, strict=True), index=detalle.index)
         ultima = clave.groupby(detalle["licitacion_id"]).transform("max")
@@ -127,9 +130,7 @@ def discover_capturas(raw_dir: Path) -> list[str]:
     return sorted(p.name for p in base.iterdir() if p.is_dir())
 
 
-def parse_capture_dir(
-    capture_dir: Path, *, fecha_captura: date | None = None
-) -> pd.DataFrame:
+def parse_capture_dir(capture_dir: Path, *, fecha_captura: date | None = None) -> pd.DataFrame:
     """Parsea todos los ficheros 643 (atom + zip) de un directorio de captura."""
     if fecha_captura is None:
         try:

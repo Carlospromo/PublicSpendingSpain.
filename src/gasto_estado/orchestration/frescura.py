@@ -37,9 +37,7 @@ def leer(warehouse_path: Path) -> dict[str, dict[str, Any]]:
         return {}
 
 
-def registrar(
-    warehouse_path: Path, fuente_cod: str, *, particion: str | None, filas: int
-) -> None:
+def registrar(warehouse_path: Path, fuente_cod: str, *, particion: str | None, filas: int) -> None:
     """Anota la materialización de una fuente (sobrescribe su entrada anterior)."""
     ruta = ledger_path(warehouse_path)
     actual = leer(warehouse_path)

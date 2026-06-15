@@ -93,7 +93,12 @@ def detalle() -> pd.DataFrame:
 def test_grano_y_claves(detalle: pd.DataFrame) -> None:
     assert len(detalle) == 8
     assert sorted(detalle["licitacion_id"].unique()) == [
-        "17907624", "19046011", "19565414", "19663725", "19853788", "19853789",
+        "17907624",
+        "19046011",
+        "19565414",
+        "19663725",
+        "19853788",
+        "19853789",
     ]
     # Exactamente UNA cabecera por licitación (suma sin doble conteo).
     assert (detalle.groupby("licitacion_id")["es_cabecera_expediente"].sum() == 1).all()
@@ -164,12 +169,18 @@ def test_formalizacion_y_periodo_historico(detalle: pd.DataFrame) -> None:
 
 def test_dedup_se_queda_con_la_foto_mas_reciente(tmp_path: Path) -> None:
     vieja = _ENTRY.format(
-        lic="111", exp="X-1", estado="ADJ", updated="2026-06-01T10:00:00Z",
+        lic="111",
+        exp="X-1",
+        estado="ADJ",
+        updated="2026-06-01T10:00:00Z",
         cuerpo=_RESULTADO.format(fecha="2026-05-30", lote="1", importe="100")
         + _RESULTADO.format(fecha="2026-05-30", lote="2", importe="200"),
     )
     nueva = _ENTRY.format(
-        lic="111", exp="X-1", estado="RES", updated="2026-06-10T10:00:00Z",
+        lic="111",
+        exp="X-1",
+        estado="RES",
+        updated="2026-06-10T10:00:00Z",
         cuerpo=_RESULTADO.format(fecha="2026-05-30", lote="1", importe="100"),
     )
     paths = [_pagina(tmp_path, "p1.atom", nueva), _pagina(tmp_path, "p2.atom", vieja)]

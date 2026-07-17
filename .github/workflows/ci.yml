@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# El workflow solo valida código; no debe modificar el repositorio ni crear incidencias.
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Pruebas, lint y tipado
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      # astral-sh/setup-uv@v5.4.0
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
+
+      - name: Sincronizar entorno bloqueado (Python 3.12)
+        run: uv sync --group dev --frozen
+
+      - name: Ejecutar pruebas
+        run: uv run pytest
+
+      - name: Comprobar estilo
+        run: uv run ruff check src/ tests/
+
+      - name: Comprobar tipos
+        run: uv run mypy src/

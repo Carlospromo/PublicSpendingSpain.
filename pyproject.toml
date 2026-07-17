@@ -35,7 +35,7 @@ dashboard = [
 ]
 dev = [
     "ruff==0.15.16",
-    "mypy==2.1.0",
+    "mypy==2.3.0",
     "pytest==9.0.3",
     # types-pyyaml: stubs de tipado para que mypy --strict acepte pyyaml
     "types-pyyaml==6.0.12.20260518",

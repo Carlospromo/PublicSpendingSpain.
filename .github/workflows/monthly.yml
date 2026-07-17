@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
       # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
       - name: Sincronizar entorno
         run: uv sync --frozen
       - name: Materializar assets mensuales (IGAE)

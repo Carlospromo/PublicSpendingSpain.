@@ -9,8 +9,8 @@ El sistema:
 1. **Extrae** datos de ejecución presupuestaria y gasto desde fuentes oficiales.
 2. **Normaliza** todo a un modelo de datos unificado sobre la jerarquía orgánica:
    Ministerio (sección) → Servicio presupuestario → Dirección General (vía DIR3).
-3. **Almacena** de forma versionada e inmutable (raw, patrón *git-scraping*) y analítica
-   (warehouse DuckDB).
+3. **Almacena** capturas raw versionadas cuando su tamaño lo permite y un warehouse
+   analítico DuckDB; las capturas masivas conservan trazabilidad mediante manifiestos.
 4. **Expone** una API limpia (FastAPI) + un dashboard Streamlit para análisis inmediato.
 5. **Se actualiza solo** sin intervención manual (GitHub Actions: mensual para IGAE,
    semanal para PLACSP/BDNS/BOE/CdM).
@@ -39,14 +39,17 @@ uv sync --group dashboard  # + streamlit y plotly para el dashboard
 
 ## Arranque rápido
 
-### 1. Reconstruir el warehouse desde raw
+### 1. Reconstruir el warehouse desde raw disponible
 
 ```bash
 uv run gasto-estado build
 ```
 
-Reconstituye el warehouse DuckDB desde la capa raw. Reproducible: cualquiera puede
-clonar el repo y ejecutar este comando para obtener el mismo warehouse.
+Reconstituye el warehouse DuckDB desde la capa raw disponible. Las transformaciones
+son reproducibles si se usan el mismo commit, `uv.lock` y las mismas capturas. Un
+clon no incluye los raw masivos de PLACSP y BDNS; para reconstruir exactamente un
+estado histórico que dependa de ellos hace falta recuperar sus capturas inmutables
+y manifiestos. Consulta [docs/reproducibilidad.md](docs/reproducibilidad.md).
 
 ### 2. Levantar la API
 
@@ -206,6 +209,7 @@ gasto-estado/
 | [`docs/metricas.md`](docs/metricas.md) | Catálogo de métricas y su naturaleza |
 | [`docs/alertas.md`](docs/alertas.md) | Catálogo de alertas, umbrales y calibración |
 | [`docs/cobertura_fuentes.md`](docs/cobertura_fuentes.md) | Cobertura y limitaciones por fuente y nivel orgánico |
+| [`docs/reproducibilidad.md`](docs/reproducibilidad.md) | Alcance reproducible, manifiestos y recuperación de capturas masivas |
 | [`docs/orquestacion.md`](docs/orquestacion.md) | Diseño de Dagster, resiliencia operativa (centinela, notificaciones, health check) |
 | [`docs/dashboard_hallazgos.md`](docs/dashboard_hallazgos.md) | Huecos del contrato v1 detectados al construir el dashboard (especificación para v2) |
 
@@ -225,3 +229,11 @@ Este sistema **no esconde la calidad del dato**. Toda cifra viaja con:
 
 Las alertas son **hipótesis para revisión humana**, nunca veredictos. El lenguaje
 es siempre descriptivo, nunca acusatorio.
+
+---
+
+## Licencia
+
+El código se distribuye bajo licencia [MIT](LICENSE), elegida como licencia
+permisiva para este repositorio público. La licencia no altera las condiciones de
+uso que puedan aplicar las fuentes oficiales de datos.

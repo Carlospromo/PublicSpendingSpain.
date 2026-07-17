@@ -32,6 +32,8 @@ data/raw/placsp/
 # ese raw se regenera con el extractor por ventana de fechas
 # (docs/bdns_estructura.md §2).
 data/raw/bdns/
+# Los manifiestos compactos de las capturas, incluidos PLACSP y BDNS, SÍ se versionan
+# en data/manifiestos/ (ver docs/reproducibilidad.md).
 
 # IDE / SO — PyCharm: ignorar todo excepto las run configurations compartidas
 .idea/*

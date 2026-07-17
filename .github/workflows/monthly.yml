@@ -1,13 +1,8 @@
 name: Materialización mensual (IGAE)
 
-# Disparador real del git-scraping mensual (Fase 7).
-# La IGAE publica el Anexo I ~25-30 días tras el cierre de mes; sondeamos
-# a diario entre los días 20 y 31. La extracción es idempotente: si no hay
-# dato nuevo, sale sin cambios (ni commit ni push).
-
 on:
   schedule:
-    - cron: "0 7 20-31 * *"  # 07:00 UTC, días 20-31 de cada mes
+    - cron: "0 7 20-31 * *"
   workflow_dispatch:
     inputs:
       particion:
@@ -15,59 +10,85 @@ on:
         required: false
         default: ""
 
+concurrency:
+  group: materializacion-mensual-igae
+  cancel-in-progress: false
+
 jobs:
   materialize-mensual:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
-
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-
+      # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v5
-
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
       - name: Sincronizar entorno
         run: uv sync --frozen
-
       - name: Materializar assets mensuales (IGAE)
         id: materialize
         run: |
           PARTICION="${{ github.event.inputs.particion }}"
-          if [ -z "$PARTICION" ]; then
-            uv run gasto-estado materialize mensual
-          else
-            uv run gasto-estado materialize mensual --particion "$PARTICION"
-          fi
-
-      - name: Notificar fallo
+          if [ -z "$PARTICION" ]; then PARTICION="$(date -u +%Y-%m-01)"; fi
+          echo "particion=$PARTICION" >> "$GITHUB_OUTPUT"
+          uv run gasto-estado materialize mensual --particion "$PARTICION"
+      - name: Registrar y notificar fallo
         if: failure()
         env:
           GASTO_ESTADO_CREAR_ISSUES: "1"
         run: |
           uv run python -c "
+          from pathlib import Path
+          from gasto_estado.orchestration.frescura import registrar_fallo
           from gasto_estado.orchestration.notifications import Incidencia, notificar_incidencias
-          notificar_incidencias([Incidencia(
-              fuente='igae_mensual',
-              particion='${{ github.event.inputs.particion }}' or None,
-              tipo_fallo='error_descarga',
-              mensaje_diagnostico='La materialización mensual falló. Revisar los logs del step anterior.',
-          )])
+          particion='${{ steps.materialize.outputs.particion }}' or None
+          diagnostico='La materialización mensual falló; revisar el step Materializar assets mensuales (IGAE).'
+          registrar_fallo(Path('data/warehouse.duckdb'), 'igae_anexo_i', particion=particion, diagnostico=diagnostico)
+          notificar_incidencias([Incidencia(fuente='igae_anexo_i', particion=particion, tipo_fallo='error_carga', mensaje_diagnostico=diagnostico)])
           "
-
-      - name: Commit de datos si hay cambios
+      - name: Publicar datos si hay cambios
+        id: publicar
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ -f 2>/dev/null || true
+          git add data/
           if git diff --cached --quiet; then
-            echo "Sin cambios; warehouse ya al día."
+            echo "hubo_cambios=false" >> "$GITHUB_OUTPUT"
           else
-            PERIODO=$(date +%Y-%m)
-            git commit -m "data(igae): update execution ${PERIODO}"
-            git push
+            git commit -m "data(igae): update ${{ steps.materialize.outputs.particion }}"
+            echo "hubo_cambios=true" >> "$GITHUB_OUTPUT"
+            echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
+      - name: Registrar manifiesto de captura
+        id: manifiesto
+        if: success() && steps.publicar.outputs.hubo_cambios == 'true'
+        env:
+          UBICACION_INMUTABLE: ${{ vars.GASTO_ESTADO_UBICACION_INMUTABLE }}
+        run: |
+          : "${UBICACION_INMUTABLE:?Configura la variable GASTO_ESTADO_UBICACION_INMUTABLE antes de publicar capturas}"
+          PERIODO="${{ steps.materialize.outputs.particion }}"
+          uv run python -m gasto_estado.orchestration.manifiestos \
+            --fuente igae_mensual --particion "$PERIODO" \
+            --url "https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/EjecucionPresupuestaria.aspx" \
+            --archivos "data/raw/igae_mensual/${PERIODO%-01}" \
+            --commit-codigo "$GITHUB_SHA" --commit-warehouse "${{ steps.publicar.outputs.commit }}" \
+            --ubicacion-inmutable "$UBICACION_INMUTABLE/igae_mensual/$PERIODO/${{ steps.publicar.outputs.commit }}" \
+            --fecha-extraccion "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git add data/manifiestos/
+          if ! git diff --cached --quiet; then
+            git commit -m "meta(igae): manifest $PERIODO"
+          fi
+          git push
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Resumen de ejecución
+        if: always()
+        env:
+          RESULTADO: ${{ job.status }}
+          COMMIT: ${{ steps.manifiesto.outputs.commit || steps.publicar.outputs.commit }}
+        run: uv run python -m gasto_estado.orchestration.resumen --grupo mensual --particion "${{ steps.materialize.outputs.particion || github.event.inputs.particion || 'automática' }}" --resultado "$RESULTADO" --commit "$COMMIT"

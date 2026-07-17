@@ -23,7 +23,7 @@ import yaml
 from gasto_estado.extractors.base import DEFAULT_HEADERS
 from gasto_estado.orchestration.notifications import (
     Incidencia,
-    escribir_step_summary,
+    notificar_incidencias,
 )
 
 _TIMEOUT = 30.0
@@ -98,7 +98,7 @@ def ejecutar(sources_path: Path | None = None) -> list[ResultadoURL]:
                 Incidencia(
                     fuente=r.fuente,
                     particion=None,
-                    tipo_fallo="url_caida",
+                    tipo_fallo="fuente_no_disponible",
                     mensaje_diagnostico=(
                         f"URL caída: {r.url}\n"
                         f"Status: {r.status or 'sin respuesta'}\n"
@@ -130,7 +130,7 @@ def ejecutar(sources_path: Path | None = None) -> list[ResultadoURL]:
 
     summary = "\n".join(lineas)
     if incidencias:
-        escribir_step_summary(incidencias)
+        notificar_incidencias(incidencias)
     else:
         import os
 

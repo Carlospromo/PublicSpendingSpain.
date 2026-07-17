@@ -228,6 +228,12 @@ class FrescuraFuenteModel(BaseModel):
     ultima_actualizacion: str | None = None
     periodo_cubierto: list[str] | None = None
     materializado_en: str | None = None
+    ultima_captura_disponible: str | None = None
+    ultima_ejecucion_intentada: str | None = None
+    ultima_ejecucion_correcta: str | None = None
+    particion_cubierta: str | None = None
+    estado_fuente: str | None = None
+    advertencia_o_error_activo: str | None = None
 
 
 class SaludModel(BaseModel):

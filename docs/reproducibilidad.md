@@ -68,7 +68,18 @@ manifiesto de archivos con sus hashes individuales, también versionado.
 
 ## Próximos pasos compatibles
 
-Una fase posterior puede automatizar la creación y validación de manifiestos y
-elegir un almacenamiento externo. Debe preservar este contrato o versionarlo de
-forma explícita; no debe cambiar retrospectivamente hashes, fechas, URLs ni
-commits ya publicados.
+## Operación automática (Fase 2)
+
+Los workflows de materialización calculan el SHA-256 y escriben el manifiesto
+con `gasto_estado.orchestration.manifiestos` después de publicar el warehouse.
+La ruta es determinista (`fuente`, inicio del rango y hash), por lo que repetir
+la misma captura no crea otro manifiesto. Una colisión con contenido distinto
+falla: no se reescribe evidencia histórica.
+
+Antes de activar esa publicación hay que configurar la variable de repositorio
+no secreta `GASTO_ESTADO_UBICACION_INMUTABLE` con el identificador raíz del
+archivo institucional, artefacto u objeto donde se conservará el raw. El valor
+es solo un identificador; nunca una URL firmada, token o credencial. Si falta la
+ubicación, el hash, los archivos o una fecha con zona horaria, el workflow falla
+sin escribir un manifiesto incompleto. Esto mantiene abierta la futura elección
+de almacenamiento sin introducir todavía Git LFS, DVC ni un proveedor externo.

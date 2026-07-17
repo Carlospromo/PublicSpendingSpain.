@@ -34,7 +34,7 @@ dashboard = [
     "plotly>=6.0.0",
 ]
 dev = [
-    "ruff==0.15.16",
+    "ruff==0.15.22",
     "mypy==2.1.0",
     "pytest==9.0.3",
     # types-pyyaml: stubs de tipado para que mypy --strict acepte pyyaml

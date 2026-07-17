@@ -1,12 +1,8 @@
 name: Materialización alta frecuencia (PLACSP/BDNS/BOE/CdM)
 
-# Disparador real del git-scraping de alta frecuencia (Fase 7).
-# Cubre PLACSP, BDNS, BOE y Consejo de Ministros con cadencia semanal (lunes).
-# La extracción es idempotente: si no hay dato nuevo, sale sin cambios.
-
 on:
   schedule:
-    - cron: "0 6 * * 1"  # 06:00 UTC, lunes
+    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       particion:
@@ -14,59 +10,87 @@ on:
         required: false
         default: ""
 
+concurrency:
+  group: materializacion-alta-frecuencia
+  cancel-in-progress: false
+
 jobs:
   materialize-alta-frecuencia:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
-
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-
+      # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v5
-
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
       - name: Sincronizar entorno
         run: uv sync --frozen
-
       - name: Materializar assets de alta frecuencia
         id: materialize
         run: |
           PARTICION="${{ github.event.inputs.particion }}"
-          if [ -z "$PARTICION" ]; then
-            uv run gasto-estado materialize alta_frecuencia
-          else
-            uv run gasto-estado materialize alta_frecuencia --particion "$PARTICION"
-          fi
-
-      - name: Notificar fallo
+          if [ -z "$PARTICION" ]; then PARTICION="$(date -u +%Y-%m-%d)"; fi
+          echo "particion=$PARTICION" >> "$GITHUB_OUTPUT"
+          uv run gasto-estado materialize alta_frecuencia --particion "$PARTICION"
+      - name: Registrar y notificar fallo
         if: failure()
         env:
           GASTO_ESTADO_CREAR_ISSUES: "1"
         run: |
           uv run python -c "
+          from pathlib import Path
+          from gasto_estado.orchestration.frescura import registrar_fallo
           from gasto_estado.orchestration.notifications import Incidencia, notificar_incidencias
-          notificar_incidencias([Incidencia(
-              fuente='alta_frecuencia',
-              particion='${{ github.event.inputs.particion }}' or None,
-              tipo_fallo='error_descarga',
-              mensaje_diagnostico='La materialización de alta frecuencia falló. Revisar los logs del step anterior.',
-          )])
+          particion='${{ steps.materialize.outputs.particion }}' or None
+          diagnostico='La materialización de alta frecuencia falló; revisar el step Materializar assets de alta frecuencia.'
+          for fuente in ('placsp', 'bdns', 'boe_sumario', 'consejo_ministros'):
+              registrar_fallo(Path('data/warehouse.duckdb'), fuente, particion=particion, diagnostico=diagnostico)
+          notificar_incidencias([Incidencia(fuente='alta_frecuencia', particion=particion, tipo_fallo='error_carga', mensaje_diagnostico=diagnostico)])
           "
-
-      - name: Commit de datos si hay cambios
+      - name: Publicar datos si hay cambios
+        id: publicar
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ -f 2>/dev/null || true
+          git add data/
           if git diff --cached --quiet; then
-            echo "Sin cambios; warehouse ya al día."
+            echo "hubo_cambios=false" >> "$GITHUB_OUTPUT"
           else
-            FECHA=$(date +%Y-%m-%d)
-            git commit -m "data(alta-frecuencia): update ${FECHA}"
-            git push
+            git commit -m "data(alta-frecuencia): update ${{ steps.materialize.outputs.particion }}"
+            echo "hubo_cambios=true" >> "$GITHUB_OUTPUT"
+            echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
+      - name: Registrar manifiestos de capturas
+        id: manifiesto
+        if: success() && steps.publicar.outputs.hubo_cambios == 'true'
+        env:
+          UBICACION_INMUTABLE: ${{ vars.GASTO_ESTADO_UBICACION_INMUTABLE }}
+        run: |
+          : "${UBICACION_INMUTABLE:?Configura la variable GASTO_ESTADO_UBICACION_INMUTABLE antes de publicar capturas}"
+          PARTICION="${{ steps.materialize.outputs.particion }}"
+          for entrada in \
+            "placsp|data/raw/placsp|https://contrataciondelestado.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom" \
+            "bdns|data/raw/bdns|https://www.infosubvenciones.es/bdnstrans/api" \
+            "boe_sumario|data/raw/boe|https://www.boe.es/datosabiertos/api" \
+            "consejo_ministros|data/raw/consejo_ministros|https://www.lamoncloa.gob.es/consejodeministros/referencias/Paginas/index.aspx"; do
+            IFS='|' read -r FUENTE ARCHIVOS URL <<< "$entrada"
+            uv run python -m gasto_estado.orchestration.manifiestos --fuente "$FUENTE" --particion "$PARTICION" --url "$URL" --archivos "$ARCHIVOS" --commit-codigo "$GITHUB_SHA" --commit-warehouse "${{ steps.publicar.outputs.commit }}" --ubicacion-inmutable "$UBICACION_INMUTABLE/$FUENTE/$PARTICION/${{ steps.publicar.outputs.commit }}" --fecha-extraccion "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          done
+          git add data/manifiestos/
+          if ! git diff --cached --quiet; then
+            git commit -m "meta(capturas): manifests $PARTICION"
+          fi
+          git push
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Resumen de ejecución
+        if: always()
+        env:
+          RESULTADO: ${{ job.status }}
+          COMMIT: ${{ steps.manifiesto.outputs.commit || steps.publicar.outputs.commit }}
+        run: uv run python -m gasto_estado.orchestration.resumen --grupo alta_frecuencia --particion "${{ steps.materialize.outputs.particion || github.event.inputs.particion || 'automática' }}" --resultado "$RESULTADO" --commit "$COMMIT"

@@ -54,7 +54,9 @@ No hay servidor Dagster permanente. El pipeline funciona así:
 1. **GitHub Actions** (cron) lanza `gasto-estado materialize <grupo> [--particion ...]`.
 2. El CLI invoca `dagster.materialize()` con los assets del grupo y la partición del día.
 3. Dagster ejecuta el subgrafo en proceso: descarga → parse → carga → validación → frescura.
-4. La ejecución termina; el runner guarda cambios en `data/` y hace commit/push.
+4. La ejecución termina; el runner publica cambios permitidos en `data/`, crea
+   manifiestos compactos de las capturas y hace commit/push. Las exclusiones de
+   `.gitignore` para raw masivo PLACSP/BDNS nunca se fuerzan.
 
 No hay daemon, no hay servicio de metadatos, no hay infraestructura adicional.
 
@@ -62,9 +64,13 @@ No hay daemon, no hay servicio de metadatos, no hay infraestructura adicional.
 
 El sistema mantiene dos caminos que conviven:
 
-### 1. `gasto-estado build` (reproducibilidad total)
+### 1. `gasto-estado build` (transformación reproducible con raw disponible)
 
-Reconstruye el warehouse completo desde la capa raw + seeds. Sin Dagster. Cualquiera puede clonar el repo y ejecutar `uv run gasto-estado build` para obtener el mismo warehouse.
+Reconstruye el warehouse desde la capa raw disponible + seeds, sin Dagster. Con
+el mismo commit, `uv.lock` y las mismas capturas produce el mismo resultado. Un
+clon por sí solo no recupera las capturas masivas no versionadas de PLACSP y
+BDNS; para una reconstrucción histórica exacta hace falta su copia inmutable y
+el manifiesto descrito en `docs/reproducibilidad.md`.
 
 ```bash
 uv run gasto-estado build   # reconstruye desde raw/
@@ -108,6 +114,13 @@ Cada materialización escribe una entrada en `data/materializacion.json` (junto 
 ```
 
 La API (`/v1/frescura`) incluye `materializado_en` en cada entrada cuando el ledger existe. Si no existe (camino `gasto-estado build` sin Dagster), el campo es `null`: degradación graceful sin romper el contrato.
+
+Desde Fase 2 el ledger también puede incluir, siempre de forma opcional para
+mantener v1, `ultima_captura_disponible`, `ultima_ejecucion_intentada`,
+`ultima_ejecucion_correcta`, `particion_cubierta`, `estado_fuente` y
+`advertencia_o_error_activo`. El último éxito no se borra cuando falla un intento
+posterior; así el frontal puede mostrar simultáneamente cobertura conocida y un
+aviso operativo.
 
 ## Schedules (cadencia)
 
@@ -163,7 +176,16 @@ Cuando una materialización falla, el sistema genera un informe de incidencia vi
 1. **Step summary** (`$GITHUB_STEP_SUMMARY`): siempre, sin configuración.
 2. **Issue de GitHub** (etiqueta `pipeline-failure`): opt-in con `GASTO_ESTADO_CREAR_ISSUES=1`.
 
-Tipos de incidencia: `validacion_contable`, `formato_no_reconocido`, `error_descarga`, `revision_silenciosa`, `url_caida`.
+Tipos de incidencia operativos: `fuente_no_disponible`, `formato_cambiado`,
+`respuesta_vacia`, `validacion_contable`, `error_carga` y `error_publicacion`.
+Cada incidencia incorpora fuente, partición y diagnóstico en el resumen. La
+huella de esos tres valores evita abrir dos issues para el mismo fallo mientras
+el anterior siga abierto.
+
+Los tres workflows usan `concurrency` por grupo y un resumen uniforme con
+fuente, partición/ventana, filas, fecha de captura, commit producido y resultado
+de checks. Las actions están fijadas por SHA. Los permisos de escritura de
+contenidos se limitan a materializaciones y los de issues a la notificación.
 
 ### Monitor de URLs
 
@@ -172,3 +194,20 @@ El workflow `health_check.yml` (domingo 08:00 UTC) verifica semanalmente que las
 ### Revisiones silenciosas de la IGAE
 
 La IGAE revisa a veces un fichero ya publicado sin cambiar la URL. El detector compara el hash del fichero recién descargado con las capturas anteriores del mismo periodo. Si difiere, registra una nota en el ledger y genera una incidencia. **No recarga automáticamente**: una revisión silenciosa puede legítimamente cambiar cifras, y eso debe ser una decisión consciente.
+
+### Reintento y recuperación histórica
+
+Para reintentar sin descargar de nuevo el raw ya conservado, usa una partición
+explícita y `--no-descargar`:
+
+```bash
+uv run gasto-estado materialize mensual --particion 2026-04-01 --no-descargar
+uv run gasto-estado materialize alta_frecuencia --particion 2026-07-17 --no-descargar
+```
+
+Para recuperar un estado histórico exacto, localiza el manifiesto en
+`data/manifiestos/`, recupera la copia indicada por `ubicacion_inmutable`,
+verifica su SHA-256 y usa los commits `commit_codigo` y `commit_warehouse` que
+registra. Después reconstruye o re-materializa la partición. Si la copia no está
+disponible, no se debe presentar una regeneración desde la fuente viva como una
+recuperación histórica exacta.

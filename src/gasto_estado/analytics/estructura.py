@@ -219,6 +219,14 @@ def frescura_fuentes(
                 "ultima_actualizacion": None if ultima is None else ultima.isoformat(),
                 "periodo_cubierto": None if pmin is None else [pmin, pmax],
                 "materializado_en": entrada_ledger.get("materializado_en"),
+                # Campos operativos opcionales: los clientes v1 que solo conocen
+                # los campos anteriores siguen recibiendo el mismo contrato.
+                "ultima_captura_disponible": entrada_ledger.get("ultima_captura_disponible"),
+                "ultima_ejecucion_intentada": entrada_ledger.get("ultima_ejecucion_intentada"),
+                "ultima_ejecucion_correcta": entrada_ledger.get("ultima_ejecucion_correcta"),
+                "particion_cubierta": entrada_ledger.get("particion_cubierta"),
+                "estado_fuente": entrada_ledger.get("estado_fuente"),
+                "advertencia_o_error_activo": entrada_ledger.get("advertencia_o_error_activo"),
             }
         )
     return out

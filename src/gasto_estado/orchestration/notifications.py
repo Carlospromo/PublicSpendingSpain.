@@ -16,6 +16,7 @@ si se añade un canal ``Notificador`` en el futuro.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from dataclasses import dataclass, field
@@ -45,11 +46,40 @@ class Notificador(Protocol):
 
 _ICONOS_TIPO = {
     "validacion_contable": "VALIDACION",
+    "formato_cambiado": "FORMATO",
+    "fuente_no_disponible": "RED",
+    "respuesta_vacia": "VACIO",
+    "error_carga": "CARGA",
+    "error_publicacion": "PUBLICACION",
+    "revision_silenciosa": "REVISION",
+    # Alias heredados para que los informes previos sigan siendo legibles.
     "formato_no_reconocido": "FORMATO",
     "error_descarga": "RED",
-    "revision_silenciosa": "REVISION",
     "url_caida": "URL",
 }
+
+
+def clasificar_fallo(error: BaseException) -> str:
+    """Clasifica una excepción sin exponer su traza ni cambiar el flujo de carga."""
+    nombre = type(error).__name__.lower()
+    mensaje = str(error).lower()
+    if "formatonoreconocido" in nombre or "formato" in nombre:
+        return "formato_cambiado"
+    if "coherence" in nombre or "validacion" in nombre or "contable" in mensaje:
+        return "validacion_contable"
+    if "empty" in nombre or "vac" in mensaje or "sin contenido" in mensaje:
+        return "respuesta_vacia"
+    if "transport" in nombre or "timeout" in nombre or "sourceblocked" in nombre:
+        return "fuente_no_disponible"
+    if "duckdb" in nombre or "load" in nombre or "carga" in mensaje:
+        return "error_carga"
+    return "error_publicacion"
+
+
+def huella_incidencia(incidencia: Incidencia) -> str:
+    """Identificador estable para no abrir dos issues del mismo fallo operativo."""
+    particion = incidencia.particion or "sin-particion"
+    return f"gasto-estado:failure:{incidencia.tipo_fallo}:{incidencia.fuente}:{particion}"
 
 
 def _formato_incidencia(inc: Incidencia) -> str:
@@ -98,6 +128,7 @@ def escribir_step_summary(incidencias: list[Incidencia]) -> None:
 def formatear_issue_body(incidencia: Incidencia) -> str:
     """Cuerpo de un issue de GitHub para una incidencia."""
     lineas = [
+        f"<!-- {huella_incidencia(incidencia)} -->",
         _formato_incidencia(incidencia),
         "",
         "---",
@@ -124,6 +155,25 @@ def crear_issue_si_ci(incidencia: Incidencia) -> bool:
     body = formatear_issue_body(incidencia)
 
     try:
+        existente = subprocess.run(
+            [
+                "gh",
+                "issue",
+                "list",
+                "--state",
+                "open",
+                "--search",
+                huella_incidencia(incidencia),
+                "--json",
+                "number",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if json.loads(existente.stdout):
+            return False
         subprocess.run(
             [
                 "gh",
@@ -141,7 +191,12 @@ def crear_issue_si_ci(incidencia: Incidencia) -> bool:
             timeout=30,
         )
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+    except (
+        json.JSONDecodeError,
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
         return False
 
 

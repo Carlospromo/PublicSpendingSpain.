@@ -2,8 +2,12 @@ name: Monitor de salud de fuentes
 
 on:
   schedule:
-    - cron: "0 8 * * 0"  # Domingo 08:00 UTC
+    - cron: "0 8 * * 0"
   workflow_dispatch: {}
+
+concurrency:
+  group: monitor-salud-fuentes
+  cancel-in-progress: false
 
 jobs:
   health-check:
@@ -11,17 +15,21 @@ jobs:
     permissions:
       contents: read
       issues: write
-
     steps:
-      - uses: actions/checkout@v4
-
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v5
-
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
       - name: Sincronizar entorno
         run: uv sync --frozen
-
       - name: Verificar URLs de fuentes
+        id: health
         env:
           GASTO_ESTADO_CREAR_ISSUES: "1"
         run: uv run python -m gasto_estado.orchestration.health_check
+      - name: Resumen de ejecución
+        if: always()
+        env:
+          RESULTADO: ${{ job.status }}
+        run: uv run python -m gasto_estado.orchestration.resumen --grupo health_check --particion "sonda semanal" --resultado "$RESULTADO"

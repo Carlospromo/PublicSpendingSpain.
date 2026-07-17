@@ -20,7 +20,7 @@ dependencies = [
     # xlrd: única vía para leer los Anexo I históricos en .xls (BIFF/OLE2,
     # 2015-abril 2016); openpyxl solo lee OOXML. xlrd 2.x solo soporta .xls.
     "xlrd==2.0.2",
-    "dagster==1.11.16",
+    "dagster==1.13.14",
 ]
 
 [project.scripts]

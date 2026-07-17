@@ -263,3 +263,7 @@ def api(
         )
     typer.echo(f"api: sirviendo en http://{host}:{port} (read-only; docs en /docs)")
     uvicorn.run(create_app(), host=host, port=port)
+
+
+if __name__ == "__main__":
+    app()

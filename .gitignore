@@ -33,8 +33,9 @@ data/raw/placsp/
 # (docs/bdns_estructura.md §2).
 data/raw/bdns/
 
-# IDE / SO
-.idea/
+# IDE / SO — PyCharm: ignorar todo excepto las run configurations compartidas
+.idea/*
+!.idea/runConfigurations/
 .vscode/
 .DS_Store
 

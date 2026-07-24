@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
       - name: Sincronizar entorno
         run: uv sync --frozen
       - name: Verificar URLs de fuentes

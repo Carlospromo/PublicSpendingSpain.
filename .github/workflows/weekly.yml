@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
       # astral-sh/setup-uv v5.4.0
       - name: Instalar uv
-        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
       - name: Sincronizar entorno
         run: uv sync --frozen
       - name: Materializar assets de alta frecuencia
